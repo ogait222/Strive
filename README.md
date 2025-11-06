@@ -8,23 +8,23 @@
 
 ### 🧩 **Frontend**
 - [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
-- [Vite](https://vitejs.dev/) (ambiente de desenvolvimento ultrarrápido)
+- [Vite](https://vitejs.dev/) (ambiente de desenvolvimento)
 - [TailwindCSS](https://tailwindcss.com/) (estilização moderna)
 - [React Router](https://reactrouter.com/) (gestão de navegação)
-- Context API (`useContext`) para gestão de **tema** e **autenticação**
-- [Recharts](https://recharts.org/) para gráficos nos dashboards
+- Context API (`useContext`) (gestão de **tema** e **autenticação**)
+- [Recharts](https://recharts.org/) (para gráficos nos dashboards)
 
 ### ⚙️ **Backend**
-- [Node.js] + [Express]
-- [TypeScript]
-- [Mongoose] (para modelação dos dados em MongoDB)
-- [JWT] (para autenticação e autorização)
-- [Multer] (para upload de imagens e documentos)
-- [Swagger] (para documentação da API)
-- [Socket.io](para chat em tempo real e notificações)
+- [Node.js](https://nodejs.org/) + [Express](https://expressjs.com/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Mongoose](https://mongoosejs.com/) (modelação dos dados em MongoDB)
+- [JWT](https://jwt.io/) (autenticação e autorização)
+- [Multer](https://www.npmjs.com/package/multer) (para upload de imagens e documentos)
+- [Swagger](https://swagger.io/) (documentação da API)
+- [Socket.io](https://socket.io/) (chat em tempo real e notificações)
 
 ### 🗃️ **Base de Dados**
-- [MongoDB](armazenamento flexível e escalável)
+- [MongoDB](https://www.mongodb.com/) (armazenamento flexível e escalável)
 
 ---
 
@@ -38,25 +38,27 @@ Com esta plataforma, os treinadores podem criar planos de treino personalizados,
 
 ## 🧩 Estrutura do Projeto
 
+```bash
 /strive
-├── backend/ # API Node.js + Express + TypeScript
-│ ├── src/
-│ │ ├── controllers/
-│ │ ├── models/
-│ │ ├── routes/
-│ │ ├── middlewares/
-│ │ └── utils/
-│ ├── tests/
-│ └── swagger/
+├── backend/              
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── middlewares/
+│   │   └── utils/
+│   ├── tests/
+│   └── swagger/
 │
-├── frontend/ # React + TypeScript + Vite
-│ ├── src/
-│ │ ├── components/
-│ │ ├── pages/
-│ │ ├── contexts/
-│ │ ├── hooks/
-│ │ ├── services/
-│ │ └── assets/
+├── frontend/             
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── contexts/
+│   │   ├── hooks/
+│   │   ├── services/
+│   │   └── assets/
 │
 └── README.md
+
 
