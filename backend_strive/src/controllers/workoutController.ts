@@ -1,0 +1,67 @@
+import { Request, Response } from "express";
+import WorkoutPlan from "../models/WorkoutPlan";
+
+
+export const createWorkoutPlan = async (req: Request, res: Response) => {
+  try {
+    const plan = await WorkoutPlan.create(req.body);
+    res.status(201).json(plan);
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao criar plano de treino", error });
+  }
+};
+
+export const getAllWorkoutPlans = async (req: Request, res: Response) => {
+  try {
+    const { sort = "createdAt", order = "desc", client, trainer } = req.query;
+
+    const filter: any = {};
+    if (client) filter.client = client;
+    if (trainer) filter.trainer = trainer;
+
+    const plans = await WorkoutPlan.find(filter)
+      .populate("client trainer", "username email role")
+      .sort({ [sort as string]: order === "asc" ? 1 : -1 });
+
+    res.json(plans);
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao listar planos", error });
+  }
+};
+
+
+export const getWorkoutPlansByClient = async (req: Request, res: Response) => {
+  try {
+    const plans = await WorkoutPlan.find({ client: req.params.clientId })
+      .populate("trainer", "username email");
+    res.json(plans);
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao obter planos do cliente", error });
+  }
+};
+
+
+export const updateWorkoutPlan = async (req: Request, res: Response) => {
+  try {
+    const updated = await WorkoutPlan.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ message: "Plano não encontrado" });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao atualizar plano", error });
+  }
+};
+
+
+export const deleteWorkoutPlan = async (req: Request, res: Response) => {
+  try {
+    const deleted = await WorkoutPlan.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Plano não encontrado" });
+    res.json({ message: "Plano eliminado com sucesso" });
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao eliminar plano", error });
+  }
+};

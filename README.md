@@ -8,23 +8,22 @@
 
 ### 🧩 **Frontend**
 - [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
-- [Vite](https://vitejs.dev/) (ambiente de desenvolvimento)
-- [TailwindCSS](https://tailwindcss.com/) (estilização moderna)
-- [React Router](https://reactrouter.com/) (gestão de navegação)
-- Context API (`useContext`) (gestão de **tema** e **autenticação**)
-- [Recharts](https://recharts.org/) (para gráficos nos dashboards)
+- [Vite](https://vitejs.dev/)
+- [TailwindCSS](https://tailwindcss.com/)
+- [React Router](https://reactrouter.com/)
+- [Recharts](https://recharts.org/) 
 
 ### ⚙️ **Backend**
 - [Node.js](https://nodejs.org/) + [Express](https://expressjs.com/)
 - [TypeScript](https://www.typescriptlang.org/)
-- [Mongoose](https://mongoosejs.com/) (modelação dos dados em MongoDB)
-- [JWT](https://jwt.io/) (autenticação e autorização)
-- [Multer](https://www.npmjs.com/package/multer) (para upload de imagens e documentos)
-- [Swagger](https://swagger.io/) (documentação da API)
-- [Socket.io](https://socket.io/) (chat em tempo real e notificações)
+- [Mongoose](https://mongoosejs.com/) 
+- [JWT](https://jwt.io/) 
+- [Multer](https://www.npmjs.com/package/multer) 
+- [Swagger](https://swagger.io/) 
+- [Socket.io](https://socket.io/) 
 
 ### 🗃️ **Base de Dados**
-- [MongoDB](https://www.mongodb.com/) (armazenamento flexível e escalável)
+- [MongoDB](https://www.mongodb.com/)
 
 ---
 
@@ -60,5 +59,3 @@ Com esta plataforma, os treinadores podem criar planos de treino personalizados,
 │   │   └── assets/
 │
 └── README.md
-
-
