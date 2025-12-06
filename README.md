@@ -9,7 +9,6 @@
 ### 🧩 **Frontend**
 - [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
 - [Vite](https://vitejs.dev/)
-- [TailwindCSS](https://tailwindcss.com/)
 - [React Router](https://reactrouter.com/)
 - [Recharts](https://recharts.org/) 
 

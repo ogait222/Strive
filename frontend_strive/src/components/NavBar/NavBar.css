@@ -1,0 +1,59 @@
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 20px;
+    width: 100%;
+    background: var(--navbar-bg, #ffffff);
+    color: var(--navbar-text, #000000);
+    box-sizing: border-box;
+    font-family: "Manrope", sans-serif;
+}
+
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.main-buttons {
+    display: flex;
+    align-items: contain;
+}
+
+.logo-strive {
+    width: 100%;
+    max-width: 250px;
+    height: auto;
+    object-fit: contain;
+    margin-top: -25px;
+}
+
+.login-button {
+    color: var(--navbar-text, #797979);
+    font-weight: 650;
+    background: transparent;
+    border: none;
+}
+
+.login-button:hover {
+    color:var(--navbar-text,#f0582d);
+    transition: 0.3s
+
+}
+
+.signup-button {
+    background-color: #f0582d;
+    border-radius: 13px; 
+    padding: 9px 20px;
+    
+}
+
+.signup-button:hover {
+    background-color: #d34c27;
+    transition: all 0.5s ease;
+    border-color: #d34c27;
+}
+

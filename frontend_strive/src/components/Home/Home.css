@@ -1,0 +1,148 @@
+
+.home-container {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #ffffff;
+  font-family: "Manrope", sans-serif;
+}
+
+.main-section {
+  width: 100%;
+  padding: 4rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 3rem;
+}
+
+.main-text {
+  flex: 1;
+  margin-left: 3rem;
+}
+
+.main-text h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #111827;
+}
+
+.main-text p {
+  margin-top: 1rem;
+  font-size: 1.1rem;
+  color: #4b5563;
+}
+
+.main-buttons {
+  margin-top: 2rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-comecar,
+.btn-sabermais {
+  padding: 0.9rem 1.8rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  border: none;
+  transition: 0.2s ease-in-out;
+}
+
+.btn-comecar {
+  background: #f0582d;
+  color: white;
+}
+
+.btn-comecar:hover {
+  background: #d34c27;
+}
+
+.btn-sabermais {
+  background: transparent;
+  color: #f0582d;
+  border: 2px solid #f0582d;
+}
+
+.btn-sabermais:hover {
+  background: #d34c27;
+  color: white;
+  border-color: #d34c27;
+  transition: all 0.5s ease;
+}
+
+
+.hero-image img {
+  width: 420px;
+  max-width: 100%;
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+  100% { transform: translateY(0px); }
+}
+
+.main-features {
+  margin-top: 4rem;
+  padding: 2rem;
+  width: 100%;
+  max-width: 1200px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.feature-card {
+  background: white;
+  padding: 1.8rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  transition: 0.25s ease-in-out;
+  border: 1px solid #e5e7eb;
+}
+
+.feature-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.feature-card h3 {
+  font-size: 1.3rem;
+}
+
+.feature-card p {
+  margin-top: 0.5rem;
+  color: #4b5563;
+}
+
+/* ====== RESPONSIVE ====== */
+
+@media (max-width: 900px) {
+  .main-section {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .main-buttons {
+    justify-content: center;
+  }
+
+  .hero-image img {
+    width: 320px;
+  }
+}
+
+@media (max-width: 500px) {
+  .main-text h1 {
+    font-size: 2.3rem;
+  }
+
+  .main-text p {
+    font-size: 1rem;
+  }
+}
