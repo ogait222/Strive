@@ -1,7 +1,10 @@
 import "./Home.css";
 import NavBar from "../NavBar/NavBar";
 
+
 export default function Home() {
+  
+
   return (
     <div className="home-container">
       <NavBar />
@@ -15,7 +18,7 @@ export default function Home() {
           </p>
 
           <div className="main-buttons">
-            <button className="btn-comecar">Começar</button>
+            <button className="btn-comecar" >Começar</button>
             <button className="btn-sabermais">Saber mais</button>
           </div>
         </div>
