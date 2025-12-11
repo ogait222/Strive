@@ -44,7 +44,17 @@ export default function NavBar() {
     <nav className="navbar">
       <div
         className="main-buttons"
-        onClick={() => user ? navigate("/dashboard") : navigate("/")}
+        onClick={() => {
+          if (user) {
+            if (user.role === 'admin') {
+              navigate("/admin-dashboard");
+            } else {
+              navigate("/dashboard");
+            }
+          } else {
+            navigate("/");
+          }
+        }}
         style={{ cursor: 'pointer' }}
       >
         <img src="/src/assets/strive-logozito.png" className="logo-strive" alt="Logo" />

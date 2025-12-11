@@ -14,7 +14,7 @@ if (!JWT_SECRET) {
 export const register = async (req: Request, res: Response) => {
   try {
     const { name, username, email, password, role } = req.body;
-    
+
     const existingUser = await User.findOne({
       $or: [{ email }, { username }],
     });
@@ -57,6 +57,7 @@ export const login = async (req: Request, res: Response) => {
     res.json({
       token,
       user: {
+        _id: user._id,
         id: user._id,
         name: user.name,
         username: user.username,

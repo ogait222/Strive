@@ -91,7 +91,7 @@ const MONGO_URI = process.env.MONGO_URI as string;
 mongoose.connect(MONGO_URI)
   .then(() => {
     console.log("MongoDB conectado com sucesso");
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Servidor a correr na porta ${PORT}`);
     });
   })

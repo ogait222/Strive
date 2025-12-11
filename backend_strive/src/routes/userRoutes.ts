@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getTrainers, selectTrainer, getMe, getStudents } from "../controllers/userController";
+import { getTrainers, selectTrainer, getMe, getStudents, searchUsers } from "../controllers/userController";
 import { verifyToken, authorizeRoles } from "../middlewares/authMiddleware";
 
 const router = Router();
@@ -75,5 +75,27 @@ router.get("/me", verifyToken, getMe);
  *         description: Lista de alunos
  */
 router.get("/students", verifyToken, authorizeRoles("trainer"), getStudents);
+
+/**
+ * @swagger
+ * /users/search:
+ *   get:
+ *     summary: Pesquisar utilizadores por nome ou username
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: query
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Termo de pesquisa
+ *     responses:
+ *       200:
+ *         description: Lista de utilizadores encontrados
+ */
+router.get("/search", verifyToken, searchUsers);
+
 
 export default router;

@@ -29,10 +29,32 @@ export default function AdminDashboard() {
     const [requests, setRequests] = useState<TrainerChangeRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [totalUnread, setTotalUnread] = useState(0);
 
     useEffect(() => {
         fetchRequests();
+        fetchUnreadCount();
     }, []);
+
+    const fetchUnreadCount = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const userStr = localStorage.getItem('user');
+            if (!userStr) return;
+            const user = JSON.parse(userStr);
+            const userId = user.id || user._id;
+
+            const response = await axios.get(`http://localhost:3500/chats/user/${userId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const chats = response.data;
+            // Calculate total unread (assuming chat object now has unreadCount property from updated backend)
+            const total = chats.reduce((acc: number, chat: any) => acc + (chat.unreadCount || 0), 0);
+            setTotalUnread(total);
+        } catch (error) {
+            console.error('Erro ao buscar mensagens não lidas:', error);
+        }
+    };
 
     const fetchRequests = async () => {
         try {
@@ -78,6 +100,37 @@ export default function AdminDashboard() {
                 <div className="admin-dashboard">
                     <div className="dashboard-header">
                         <h1>Painel de Administrador</h1>
+                    </div>
+
+                    <div className="admin-actions-section">
+                        <h2>Ações Rápidas</h2>
+                        <div className="admin-action-cards">
+                            <div className="admin-card action-chat" onClick={() => (window.location.href = '/chat')} style={{ position: 'relative' }}>
+                                <div className="admin-card-icon">💬</div>
+                                <h3>Chats</h3>
+                                <p>Falar com utilizadores</p>
+                                {totalUnread > 0 && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '10px',
+                                        right: '10px',
+                                        backgroundColor: '#e53e3e',
+                                        color: 'white',
+                                        borderRadius: '50%',
+                                        width: '24px',
+                                        height: '24px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 'bold',
+                                        border: '2px solid white'
+                                    }}>
+                                        {totalUnread}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
                     <div className="requests-section">

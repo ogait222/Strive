@@ -6,6 +6,10 @@ export const createOrGetChat = async (req: Request, res: Response) => {
   try {
     const { userId1, userId2 } = req.body;
 
+    if (!userId1 || !userId2) {
+      return res.status(400).json({ message: "IDs dos utilizadores são obrigatórios" });
+    }
+
     let chat = await Chat.findOne({
       participants: { $all: [userId1, userId2] },
     });
@@ -56,9 +60,37 @@ export const getUserChats = async (req: Request, res: Response) => {
     const { userId } = req.params;
     const chats = await Chat.find({ participants: userId })
       .populate("participants", "name role")
-      .populate("lastMessage");
-    res.status(200).json(chats);
+      .populate("lastMessage") // Assuming lastMessage is a reference properly populated
+      .lean(); // Convert to plain object to attach custom properties
+
+    // Calculate unread count for each chat
+    const chatsWithUnread = await Promise.all(chats.map(async (chat) => {
+      const unreadCount = await Message.countDocuments({
+        chatId: chat._id,
+        receiver: userId,
+        seen: false
+      });
+      return { ...chat, unreadCount };
+    }));
+
+    res.status(200).json(chatsWithUnread);
   } catch (err) {
     res.status(500).json({ message: "Erro ao obter chats", error: err });
+  }
+};
+
+export const markMessagesAsRead = async (req: Request, res: Response) => {
+  try {
+    const { chatId } = req.params;
+    const userId = (req as any).user.id;
+
+    await Message.updateMany(
+      { chatId, receiver: userId, seen: false },
+      { seen: true }
+    );
+
+    res.status(200).json({ message: "Mensagens marcadas como lidas" });
+  } catch (err) {
+    res.status(500).json({ message: "Erro ao marcar mensagens como lidas", error: err });
   }
 };

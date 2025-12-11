@@ -46,6 +46,7 @@ export const getMe = async (req: Request, res: Response) => {
     }
 }
 
+
 export const getStudents = async (req: Request, res: Response) => {
     try {
         const trainerId = (req as any).user.id;
@@ -55,3 +56,30 @@ export const getStudents = async (req: Request, res: Response) => {
         res.status(500).json({ message: "Erro ao buscar alunos", error });
     }
 }
+
+export const searchUsers = async (req: Request, res: Response) => {
+    try {
+        const { query } = req.query;
+        const currentUserId = (req as any).user.id;
+
+        if (!query) {
+            return res.status(400).json({ message: "Termo de pesquisa necessário" });
+        }
+
+        const users = await User.find({
+            $and: [
+                { _id: { $ne: currentUserId } }, // Don't show myself
+                {
+                    $or: [
+                        { name: { $regex: query, $options: "i" } },
+                        { username: { $regex: query, $options: "i" } }
+                    ]
+                }
+            ]
+        }).select("name username role");
+
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: "Erro ao pesquisar utilizadores", error });
+    }
+};

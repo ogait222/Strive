@@ -24,6 +24,8 @@ export default function Dashboard() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+
   // Dashboard items for Clients
   const clientItems = [
     {
@@ -46,7 +48,12 @@ export default function Dashboard() {
     {
       title: "Chat",
       description: "Fale com seu personal trainer",
-      icon: "💬",
+      icon: (
+        <div className="notification-badge-container">
+          <span>💬</span>
+          {unreadChatCount > 0 && <div className="unread-badge">{unreadChatCount > 9 ? '9+' : unreadChatCount}</div>}
+        </div>
+      ),
       path: "/chat"
     },
     {
@@ -79,7 +86,12 @@ export default function Dashboard() {
     {
       title: "Chat",
       description: "Converse com seus alunos",
-      icon: "💬",
+      icon: (
+        <div className="notification-badge-container">
+          <span>💬</span>
+          {unreadChatCount > 0 && <div className="unread-badge">{unreadChatCount > 9 ? '9+' : unreadChatCount}</div>}
+        </div>
+      ),
       path: "/chat"
     }
   ];
@@ -90,20 +102,52 @@ export default function Dashboard() {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem("token");
+        const userStr = localStorage.getItem("user");
         if (!token) return;
+
+        // Need userId to fetch chats
+        let userId = "";
+        try {
+          if (userStr) {
+            const u = JSON.parse(userStr);
+            userId = u.id || u._id;
+          }
+        } catch (e) {
+          console.error("Error parsing user from localstorage", e);
+        }
 
         const config = { headers: { Authorization: `Bearer ${token}` } };
 
-        const [profileRes, notificationsRes] = await Promise.all([
+        const promises = [
           axios.get("http://localhost:3500/users/me", config),
           axios.get("http://localhost:3500/notifications", config)
+        ];
+
+        // Only fetch chats if we have userId (though /users/me returns it too, better to wait? No, let's use what we have or do sequential)
+        // Actually, let's rely on /users/me response if userId is missing? 
+        // Safer to just wait for profile to get ID? 
+        // Ideally we fetch profile first.
+
+        const profileRes = await axios.get("http://localhost:3500/users/me", config);
+        const currentUser = profileRes.data;
+        setUser(currentUser);
+
+        // Now fetch other stuff with confirmed ID
+        const currentUserId = currentUser._id || currentUser.id;
+
+        const [notificationsRes, chatsRes] = await Promise.all([
+          axios.get("http://localhost:3500/notifications", config),
+          axios.get(`http://localhost:3500/chats/user/${currentUserId}`, config)
         ]);
 
-        setUser(profileRes.data);
-
         // Count unread notifications
-        const count = notificationsRes.data.filter((n: any) => !n.read).length;
-        setUnreadCount(count);
+        const notifCount = notificationsRes.data.filter((n: any) => !n.read).length;
+        setUnreadCount(notifCount);
+
+        // Count unread chat messages
+        const chats = chatsRes.data;
+        const chatCount = chats.reduce((acc: number, chat: any) => acc + (chat.unreadCount || 0), 0);
+        setUnreadChatCount(chatCount);
 
       } catch (error) {
         console.error("Erro ao carregar dados:", error);

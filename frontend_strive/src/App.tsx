@@ -9,6 +9,7 @@ import MyStudents from './components/MyStudents/MyStudents';
 import AdminDashboard from './components/Dashboard/AdminDashboard';
 import ChangeTrainerRequest from './components/Trainers/ChangeTrainerRequest';
 import Notifications from './components/Notifications/Notifications';
+import Chat from './components/Chat/Chat';
 
 function App() {
 	return (
@@ -25,6 +26,7 @@ function App() {
 					<Route path="/admin-dashboard" element={<AdminDashboard />} />
 					<Route path="/change-trainer/request" element={<ChangeTrainerRequest />} />
 					<Route path="/notifications" element={<Notifications />} />
+					<Route path="/chat" element={<Chat />} />
 				</Routes>
 			</div>
 		</BrowserRouter>

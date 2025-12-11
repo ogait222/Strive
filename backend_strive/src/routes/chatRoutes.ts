@@ -3,7 +3,9 @@ import {
   createOrGetChat,
   sendMessage,
   getMessages,
+  getMessages,
   getUserChats,
+  markMessagesAsRead,
 } from "../controllers/chatController";
 
 const router = Router();
@@ -206,6 +208,36 @@ router.get("/:chatId/messages", getMessages);
  *           example: "2023-01-01T12:01:00Z" */
 
 router.get("/user/:userId", getUserChats);
+
+/**
+ * @swagger
+ * /chats/{chatId}/read:
+ *   put:
+ *     summary: Marcar mensagens de um chat como lidas
+ *     tags: [Chat]
+ *     parameters:
+ *       - in: path
+ *         name: chatId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID do chat
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Mensagens marcadas como lidas
+ */
+// Using verifyToken middleware implicitly assumed or should be added if not global. 
+// However, the controller uses (req as any).user.id which suggests verifyToken IS needed.
+// IMPORTANT: I must import verifyToken in this file if I use it. 
+// Looking at the file content from previous view_file (Step 19), I don't see verifyToken imported.
+// But looking at other route files (e.g. userRoutes), it is imported.
+// Let me check if verifyToken is imported in chatRoutes (Step 19 output showed imports).
+// Step 19 output: import { Router } from "express"; ... no verifyToken.
+// I need to import verifyToken.
+
+router.put("/:chatId/read", require("../middlewares/authMiddleware").verifyToken, markMessagesAsRead);
 
 export default router;
 
