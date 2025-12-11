@@ -7,7 +7,7 @@ import { swaggerSpec } from "./swagger/swagger";
 import express from "express";
 import mongoose from "mongoose";
 import http from "http";
-import { Server as SocketIOServer} from "socket.io";
+import { Server as SocketIOServer } from "socket.io";
 
 import authRoutes from "./routes/authRoutes";
 import workoutRoutes from "./routes/workoutRoutes";
@@ -15,6 +15,7 @@ import workoutLogRoutes from "./routes/workoutLogRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 import chatRoutes from "./routes/chatRoutes";
 import changeTrainerRoutes from "./routes/changeTrainerRoutes";
+import userRoutes from "./routes/userRoutes";
 
 dotenv.config();
 
@@ -39,6 +40,7 @@ app.use("/workout-logs", workoutLogRoutes);
 app.use("/notifications", notificationRoutes);
 app.use("/chats", chatRoutes);
 app.use("/change-trainer", changeTrainerRoutes);
+app.use("/users", userRoutes);
 
 io.on("connection", (socket) => {
   console.log(`Socket conectado: ${socket.id}`);
@@ -52,7 +54,7 @@ io.on("connection", (socket) => {
     const { chatId, sender, receiver, content } = data;
 
     try {
-      const Message = (await import("./models/Message")).Message; 
+      const Message = (await import("./models/Message")).Message;
       const Chat = (await import("./models/Chat")).Chat;
 
       const message = await Message.create({
@@ -75,7 +77,7 @@ io.on("connection", (socket) => {
     console.log(`Socket desconectado: ${socket.id}`);
   });
 });
-    
+
 
 
 

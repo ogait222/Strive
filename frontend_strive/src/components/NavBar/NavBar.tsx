@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "../NavBar/NavBar.css";
 
@@ -6,6 +6,7 @@ export default function NavBar() {
   const navigate = useNavigate();
   const [user, setUser] = useState<{ username: string } | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -18,6 +19,18 @@ export default function NavBar() {
         console.error("Failed to parse user from local storage", e);
       }
     }
+
+    // Close dropdown when clicking outside
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -39,10 +52,10 @@ export default function NavBar() {
 
       <div className="nav-links">
         {user ? (
-          <div className="user-menu" onMouseEnter={() => setShowDropdown(true)} onMouseLeave={() => setShowDropdown(false)}>
-            <div className="user-toggle">
+          <div className="user-menu" ref={dropdownRef}>
+            <div className="user-toggle" onClick={() => setShowDropdown(!showDropdown)}>
               <span className="username">Olá, {user.username}</span>
-              <span className="dropdown-arrow">▼</span>
+              <span className={`dropdown-arrow ${showDropdown ? 'open' : ''}`}>▼</span>
             </div>
             {showDropdown && (
               <div className="dropdown-menu">

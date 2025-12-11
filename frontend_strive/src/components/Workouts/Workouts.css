@@ -16,7 +16,7 @@
 /* Header */
 .workouts-content h1 {
   text-align: center;
-  margin: 3rem 0 4rem;
+  margin: 3rem 0 2rem;
   font-size: 3rem;
   font-weight: 800;
   color: var(--text-color);
@@ -24,6 +24,35 @@
   background: linear-gradient(135deg, var(--text-color) 0%, #4a4a4a 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+/* Tabs */
+.tabs-container {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+
+.tab-button {
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--secondary-text);
+  padding: 0.5rem 1.5rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.tab-button.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+}
+
+.tab-button:hover:not(.active) {
+  color: var(--text-color);
 }
 
 /* Plan Card - Premium Look */
@@ -37,6 +66,11 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+}
+
+.workout-plan-card.archived {
+  opacity: 0.8;
+  filter: grayscale(10%);
 }
 
 .workout-plan-card::before {
@@ -62,12 +96,51 @@
   transform: scaleX(1);
 }
 
+.plan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
 .workout-plan-card h2 {
-  margin: 0 0 1rem;
+  margin: 0;
   font-size: 2.2rem;
   font-weight: 700;
   color: var(--text-color);
   letter-spacing: -0.02em;
+}
+
+/* Progress Bar */
+.progress-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 200px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background: #eee;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--primary-color);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.progress-container span {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--secondary-text);
+  white-space: nowrap;
 }
 
 .workout-plan-card>p {
@@ -94,30 +167,108 @@
   transition: all 0.3s ease;
 }
 
+.day-card.completed {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.day-card.failed {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
 .day-card:hover {
-  background: var(--card-bg);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
   transform: translateY(-2px);
-  border-color: var(--primary-color);
+}
+
+.day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--card-border);
 }
 
 .day-card h3 {
-  margin: 0 0 1.5rem;
+  margin: 0;
   color: var(--primary-color);
   font-size: 1.1rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
 }
 
-.day-card h3::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--card-border);
+/* Status Actions */
+.status-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.status-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--card-border);
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.2rem;
+  padding: 0;
+}
+
+.status-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.status-btn.complete {
+  color: #2e7d32;
+}
+
+.status-btn.complete:hover,
+.status-btn.complete.selected {
+  background: #2e7d32;
+  color: white;
+  border-color: #2e7d32;
+}
+
+.status-btn.fail {
+  color: #c62828;
+}
+
+.status-btn.fail:hover,
+.status-btn.fail.selected {
+  background: #c62828;
+  color: white;
+  border-color: #c62828;
+}
+
+.status-badge {
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.completed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.failed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-badge.pending {
+  background: #f3f4f6;
+  color: #4b5563;
 }
 
 /* Exercise Lists */
@@ -217,6 +368,11 @@
   .workouts-content h1 {
     font-size: 2.2rem;
     margin: 2rem 0;
+  }
+
+  .plan-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .workout-plan-card {

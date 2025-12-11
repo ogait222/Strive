@@ -65,3 +65,35 @@ export const deleteWorkoutPlan = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Erro ao eliminar plano", error });
   }
 };
+
+export const updateDayStatus = async (req: Request, res: Response) => {
+  try {
+    const { id, dayId } = req.params;
+    const { status } = req.body;
+
+    if (!['pending', 'completed', 'failed'].includes(status)) {
+      return res.status(400).json({ message: "Status inválido" });
+    }
+
+    const plan = await WorkoutPlan.findById(id);
+    if (!plan) return res.status(404).json({ message: "Plano não encontrado" });
+
+    // Encontrar o dia específico
+    const day = plan.days.find((d: any) => d._id.toString() === dayId);
+    if (!day) return res.status(404).json({ message: "Dia não encontrado no plano" });
+
+    day.status = status;
+
+    // Verificar se todos os dias estão concluídos ou falhados
+    const allDaysDone = plan.days.every(d => d.status !== 'pending' && d.status !== undefined);
+
+    if (allDaysDone) {
+      plan.active = false;
+    }
+
+    await plan.save();
+    res.json(plan);
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao atualizar status do dia", error });
+  }
+};

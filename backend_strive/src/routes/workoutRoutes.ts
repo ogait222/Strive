@@ -5,6 +5,7 @@ import {
   getWorkoutPlansByClient,
   updateWorkoutPlan,
   deleteWorkoutPlan,
+  updateDayStatus,
 } from "../controllers/workoutController";
 import { authorizeRoles, verifyToken } from "../middlewares/authMiddleware";
 
@@ -83,7 +84,7 @@ const router = express.Router();
  *       400:
  *         description: Dados inválidos
  */
-router.post("/", verifyToken, authorizeRoles("admin","trainer") ,createWorkoutPlan);
+router.post("/", verifyToken, authorizeRoles("admin", "trainer"), createWorkoutPlan);
 
 /**
  * @swagger
@@ -97,7 +98,7 @@ router.post("/", verifyToken, authorizeRoles("admin","trainer") ,createWorkoutPl
  *       200:
  *         description: Lista de planos de treino
  */
-router.get("/", verifyToken, authorizeRoles("admin","trainer"), getAllWorkoutPlans);
+router.get("/", verifyToken, authorizeRoles("admin", "trainer"), getAllWorkoutPlans);
 
 /**
  * @swagger
@@ -120,7 +121,7 @@ router.get("/", verifyToken, authorizeRoles("admin","trainer"), getAllWorkoutPla
  *       404:
  *         description: Cliente não encontrado
  */
-router.get("/client/:clientId", verifyToken, authorizeRoles("admin","trainer", "client"), getWorkoutPlansByClient);
+router.get("/client/:clientId", verifyToken, authorizeRoles("admin", "trainer", "client"), getWorkoutPlansByClient);
 
 /**
  * @swagger
@@ -149,7 +150,7 @@ router.get("/client/:clientId", verifyToken, authorizeRoles("admin","trainer", "
  *       404:
  *         description: Plano não encontrado
  */
-router.put("/:id", verifyToken, authorizeRoles("admin","trainer"), updateWorkoutPlan);
+router.put("/:id", verifyToken, authorizeRoles("admin", "trainer"), updateWorkoutPlan);
 
 /**
  * @swagger
@@ -172,6 +173,39 @@ router.put("/:id", verifyToken, authorizeRoles("admin","trainer"), updateWorkout
  *       404:
  *         description: Plano não encontrado
  */
-router.delete("/:id", verifyToken, authorizeRoles("admin","trainer") , deleteWorkoutPlan);
+router.delete("/:id", verifyToken, authorizeRoles("admin", "trainer"), deleteWorkoutPlan);
+
+/**
+ * @swagger
+ * /workouts/{id}/day/{dayId}/status:
+ *   patch:
+ *     summary: Atualizar status de um dia de treino
+ *     tags: [Workout Plans]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID do plano
+ *       - in: path
+ *         name: dayId
+ *         required: true
+ *         description: ID do dia
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [pending, completed, failed]
+ *     responses:
+ *       200:
+ *         description: Status atualizado
+ */
+router.patch("/:id/day/:dayId/status", verifyToken, updateDayStatus);
 
 export default router;

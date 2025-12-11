@@ -1,4 +1,4 @@
-import {model, Schema , Types } from "mongoose";
+import { model, Schema, Types } from "mongoose";
 
 export interface IExercise {
     name: string;
@@ -10,10 +10,11 @@ export interface IExercise {
 
 interface IWorkoutDay {
     day: string;
+    status?: 'pending' | 'completed' | 'failed';
     exercises: IExercise[];
 }
 
-export interface IWorkoutPlan extends Document{
+export interface IWorkoutPlan extends Document {
     trainer: Types.ObjectId;
     client: Types.ObjectId;
     title: string;
@@ -34,10 +35,15 @@ const ExerciseSchema = new Schema<IExercise>({
 
 const WorkoutDaySchema = new Schema<IWorkoutDay>({
     day: { type: String, required: true },
-    exercises: { 
+    status: {
+        type: String,
+        enum: ['pending', 'completed', 'failed'],
+        default: 'pending'
+    },
+    exercises: {
         type: [ExerciseSchema],
         validate: [(val: IExercise[]) => val.length <= 10, 'Máximo de 10 exercicios por dia.']
- }
+    }
 });
 
 const WorkoutPlanSchema = new Schema<IWorkoutPlan>(
@@ -46,10 +52,10 @@ const WorkoutPlanSchema = new Schema<IWorkoutPlan>(
         trainer: { type: Schema.Types.ObjectId, ref: "User", required: true },
         title: { type: String, required: true },
         description: { type: String },
-        days: { type: [WorkoutDaySchema],},
+        days: { type: [WorkoutDaySchema], },
         active: { type: Boolean, default: true },
     },
     { timestamps: true }
-);  
+);
 
 export default model<IWorkoutPlan>("WorkoutPlan", WorkoutPlanSchema);
