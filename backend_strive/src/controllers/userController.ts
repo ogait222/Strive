@@ -45,3 +45,13 @@ export const getMe = async (req: Request, res: Response) => {
         res.status(500).json({ message: "Erro ao buscar perfil", error });
     }
 }
+
+export const getStudents = async (req: Request, res: Response) => {
+    try {
+        const trainerId = (req as any).user.id;
+        const students = await User.find({ trainerId: trainerId, role: "client" }).select("-password");
+        res.json(students);
+    } catch (error) {
+        res.status(500).json({ message: "Erro ao buscar alunos", error });
+    }
+}

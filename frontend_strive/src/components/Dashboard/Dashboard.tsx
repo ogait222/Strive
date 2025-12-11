@@ -14,6 +14,7 @@ interface Trainer {
 interface UserProfile {
   name: string;
   username: string;
+  role: string;
   trainerId?: Trainer | null;
 }
 
@@ -22,8 +23,8 @@ export default function Dashboard() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Define dashboard items (excluding "Change Trainer" as it will be in the new section)
-  const dashboardItems = [
+  // Dashboard items for Clients
+  const clientItems = [
     {
       title: "Treinos",
       description: "Veja e gerencie seus planos de treino",
@@ -49,6 +50,30 @@ export default function Dashboard() {
       path: "/workout-log"
     }
   ];
+
+  // Dashboard items for Trainers
+  const trainerItems = [
+    {
+      title: "Meus Alunos",
+      description: "Gerencie seus alunos e planos de treino",
+      icon: "👥",
+      path: "/my-students"
+    },
+    {
+      title: "Notificações",
+      description: "Verifique suas notificações",
+      icon: "🔔",
+      path: "/notifications"
+    },
+    {
+      title: "Chat",
+      description: "Converse com seus alunos",
+      icon: "💬",
+      path: "/chat"
+    }
+  ];
+
+  const dashboardItems = user?.role === 'trainer' ? trainerItems : clientItems;
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -76,35 +101,37 @@ export default function Dashboard() {
         <h1>Dashboard</h1>
         <p>Bem-vindo ao seu painel de controle, {user?.name.split(' ')[0]}!</p>
 
-        {/* My Trainer Section */}
-        <div className="trainer-section">
-          <h2>O meu Treinador</h2>
-          {loading ? (
-            <div className="trainer-loading">Carregando...</div>
-          ) : user?.trainerId ? (
-            <div className="my-trainer-card">
-              <div className="trainer-info">
-                <div className="trainer-avatar-small">
-                  {user.trainerId.name.charAt(0).toUpperCase()}
+        {/* My Trainer Section - Only for Clients */}
+        {user?.role !== 'trainer' && (
+          <div className="trainer-section">
+            <h2>O meu Treinador</h2>
+            {loading ? (
+              <div className="trainer-loading">Carregando...</div>
+            ) : user?.trainerId ? (
+              <div className="my-trainer-card">
+                <div className="trainer-info">
+                  <div className="trainer-avatar-small">
+                    {user.trainerId.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h3>{user.trainerId.name}</h3>
+                    <p>@{user.trainerId.username}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3>{user.trainerId.name}</h3>
-                  <p>@{user.trainerId.username}</p>
-                </div>
+                <button className="change-trainer-btn" onClick={() => navigate("/change-trainer/request")}>
+                  Mudar
+                </button>
               </div>
-              <button className="change-trainer-btn" onClick={() => navigate("/change-trainer/request")}>
-                Mudar
-              </button>
-            </div>
-          ) : (
-            <div className="no-trainer-card">
-              <p>Ainda não tens um treinador atribuído.</p>
-              <button className="select-trainer-btn" onClick={() => navigate("/trainers")}>
-                Escolher Treinador
-              </button>
-            </div>
-          )}
-        </div>
+            ) : (
+              <div className="no-trainer-card">
+                <p>Ainda não tens um treinador atribuído.</p>
+                <button className="select-trainer-btn" onClick={() => navigate("/trainers")}>
+                  Escolher Treinador
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="dashboard-grid">
           {dashboardItems.map((item, index) => (

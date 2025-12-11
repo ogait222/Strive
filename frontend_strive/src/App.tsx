@@ -5,6 +5,9 @@ import Login from './components/Auth/Login';
 import Dashboard from './components/Dashboard/Dashboard';
 import Workouts from './components/Workouts/Workouts';
 import TrainerSelection from './components/Trainers/TrainerSelection';
+import MyStudents from './components/MyStudents/MyStudents';
+import AdminDashboard from './components/Dashboard/AdminDashboard';
+import ChangeTrainerRequest from './components/Trainers/ChangeTrainerRequest';
 
 function App() {
 	return (
@@ -17,6 +20,9 @@ function App() {
 					<Route path="/dashboard" element={<Dashboard />} />
 					<Route path="/workouts" element={<Workouts />} />
 					<Route path="/trainers" element={<TrainerSelection />} />
+					<Route path="/my-students" element={<MyStudents />} />
+					<Route path="/admin-dashboard" element={<AdminDashboard />} />
+					<Route path="/change-trainer/request" element={<ChangeTrainerRequest />} />
 				</Routes>
 			</div>
 		</BrowserRouter>

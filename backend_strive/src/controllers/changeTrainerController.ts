@@ -1,5 +1,6 @@
-import {Request , Response} from "express";
-import ChangeTrainer  from "../models/ChangeTrainer";
+import { Request, Response } from "express";
+import ChangeTrainer from "../models/ChangeTrainer";
+import User from "../models/Users";
 
 export const requestTrainerChange = async (req: Request, res: Response) => {
   try {
@@ -22,7 +23,7 @@ export const requestTrainerChange = async (req: Request, res: Response) => {
     const changeRequest = await ChangeTrainer.create({
       client,
       currentTrainer,
-      requestedTrainer,
+      newTrainer: requestedTrainer,
       reason,
     });
 
@@ -35,41 +36,41 @@ export const requestTrainerChange = async (req: Request, res: Response) => {
 };
 
 export const getAllTrainerChangeRequests = async (req: Request, res: Response) => {
-    try {
-        const { sort = "requestedAt", order = "desc" , client , currentTrainer, newTrainer, adminHandler , status } = req.query;
+  try {
+    const { sort = "requestedAt", order = "desc", client, currentTrainer, newTrainer, adminHandler, status } = req.query;
 
-        const filter: any = {};
-        if (client) filter.client = client;
-        if (currentTrainer) filter.newTrainer = currentTrainer;
-        if (newTrainer) filter.newTrainer = newTrainer;
-        if (adminHandler) filter.adminHandler = adminHandler;
-        if (status) filter.status = status;
-        
-        const requests = await ChangeTrainer.find(filter)
-            .populate("client", "name email")
-            .populate("currentTrainer", "name email")
-            .populate("newTrainer", "name email")
-            .populate("adminHandler", "name email")
-            .sort({ [sort as string]: order === "asc" ? 1 : -1 });
+    const filter: any = {};
+    if (client) filter.client = client;
+    if (currentTrainer) filter.newTrainer = currentTrainer;
+    if (newTrainer) filter.newTrainer = newTrainer;
+    if (adminHandler) filter.adminHandler = adminHandler;
+    if (status) filter.status = status;
 
-        res.json(requests);
-    } catch (error) {
-        res.status(500).json({ message: "Erro ao listar solicitações de troca de treinador", error });
-    }
+    const requests = await ChangeTrainer.find(filter)
+      .populate("client", "name email")
+      .populate("currentTrainer", "name email")
+      .populate("newTrainer", "name email")
+      .populate("adminHandler", "name email")
+      .sort({ [sort as string]: order === "asc" ? 1 : -1 });
+
+    res.json(requests);
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao listar solicitações de troca de treinador", error });
+  }
 };
 
 export const getAllTrainerChangeRequestsByClient = async (req: Request, res: Response) => {
-    try {
-        const requests = await ChangeTrainer.find({ client: req.params.clientId })
-            .populate("currentTrainer", "name email")
-            .populate("newTrainer", "name email")
-            .populate("adminHandler", "name email")
-            .sort ({ createdAt: -1 });
-        res.json(requests);
-    }
-    catch (error) {
-        res.status(500).json({ message: "Erro ao obter solicitações do cliente", error });
-    }
+  try {
+    const requests = await ChangeTrainer.find({ client: req.params.clientId })
+      .populate("currentTrainer", "name email")
+      .populate("newTrainer", "name email")
+      .populate("adminHandler", "name email")
+      .sort({ createdAt: -1 });
+    res.json(requests);
+  }
+  catch (error) {
+    res.status(500).json({ message: "Erro ao obter solicitações do cliente", error });
+  }
 };
 
 export const updateTrainerChangeRequest = async (req: Request, res: Response) => {
@@ -86,24 +87,24 @@ export const updateTrainerChangeRequest = async (req: Request, res: Response) =>
       return res.status(404).json({ message: "Solicitação não encontrada" });
 
     if (status === "approved") {
-      await ChangeTrainer.findByIdAndUpdate(updated.client, {
-        trainer: updated.newTrainer,
+      await User.findByIdAndUpdate(updated.client, {
+        trainerId: updated.newTrainer,
       });
     }
     res.json(updated);
-    
+
   } catch (error) {
     res.status(500).json({ message: "Erro ao atualizar solicitação", error });
   }
 };
 
 export const deleteTrainerChangeRequest = async (req: Request, res: Response) => {
-    try {
-        const deleted = await ChangeTrainer.findByIdAndDelete(req.params.id);
-        if (!deleted) return res.status(404).json({ message: "Solicitação não encontrada" });
-        res.json({ message: "Solicitação deletada com sucesso" });
-    } catch (error) {
-        res.status(500).json({ message: "Erro ao deletar solicitação", error });
-    }
+  try {
+    const deleted = await ChangeTrainer.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Solicitação não encontrada" });
+    res.json({ message: "Solicitação deletada com sucesso" });
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao deletar solicitação", error });
+  }
 };
 

@@ -16,7 +16,7 @@ export default function Login({ onSwitchToRegister }: LoginProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!username || !password) {
       setError("Preencha todos os campos");
       return;
@@ -35,7 +35,11 @@ export default function Login({ onSwitchToRegister }: LoginProps) {
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
-      navigate("/dashboard");
+      if (user.role === "admin") {
+        navigate("/admin-dashboard");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || "Erro ao fazer login");
     } finally {
@@ -85,7 +89,7 @@ export default function Login({ onSwitchToRegister }: LoginProps) {
         <div className="auth-footer">
           <p>
             Não tens conta?{" "}
-            <button 
+            <button
               type="button"
               onClick={onSwitchToRegister}
               className="btn-switch"

@@ -11,7 +11,12 @@ export default function Home() {
     const token = localStorage.getItem("token");
     const user = localStorage.getItem("user");
     if (token && user) {
-      navigate("/dashboard");
+      const userData = JSON.parse(user);
+      if (userData.role === "admin") {
+        navigate("/admin-dashboard");
+      } else {
+        navigate("/dashboard");
+      }
     }
   }, [navigate]);
   return (

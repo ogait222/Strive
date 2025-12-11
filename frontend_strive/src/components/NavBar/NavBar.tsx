@@ -4,7 +4,7 @@ import "../NavBar/NavBar.css";
 
 export default function NavBar() {
   const navigate = useNavigate();
-  const [user, setUser] = useState<{ username: string } | null>(null);
+  const [user, setUser] = useState<{ username: string; role: string } | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -59,6 +59,11 @@ export default function NavBar() {
             </div>
             {showDropdown && (
               <div className="dropdown-menu">
+                {user.role === 'trainer' && (
+                  <button onClick={() => navigate('/my-students')} className="dropdown-item">
+                    Meus Alunos
+                  </button>
+                )}
                 <button onClick={handleLogout} className="dropdown-item logout-btn">
                   Sair
                 </button>

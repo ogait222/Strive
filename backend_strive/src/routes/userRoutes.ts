@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getTrainers, selectTrainer, getMe } from "../controllers/userController";
+import { getTrainers, selectTrainer, getMe, getStudents } from "../controllers/userController";
 import { verifyToken, authorizeRoles } from "../middlewares/authMiddleware";
 
 const router = Router();
@@ -61,5 +61,19 @@ router.put("/select-trainer", verifyToken, authorizeRoles("client"), selectTrain
  *         description: Dados do utilizador
  */
 router.get("/me", verifyToken, getMe);
+
+/**
+ * @swagger
+ * /users/students:
+ *   get:
+ *     summary: Listar alunos do treinador autenticado
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de alunos
+ */
+router.get("/students", verifyToken, authorizeRoles("trainer"), getStudents);
 
 export default router;
