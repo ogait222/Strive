@@ -1,0 +1,3 @@
+- [ ] Create Workouts.tsx component with authentication
+- [ ] Create Workouts.css for styling
+- [ ] Test the component by running the frontend

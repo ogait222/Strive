@@ -34,8 +34,8 @@ export default function Login({ onSwitchToRegister }: LoginProps) {
       const { token, user } = response.data;
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
-      
-      navigate("/home");
+
+      navigate("/dashboard");
     } catch (err: any) {
       setError(err.response?.data?.message || "Erro ao fazer login");
     } finally {

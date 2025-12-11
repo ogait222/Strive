@@ -120,7 +120,7 @@ router.get("/", verifyToken, authorizeRoles("admin","trainer"), getAllWorkoutPla
  *       404:
  *         description: Cliente não encontrado
  */
-router.get("/client/:clientId", verifyToken, authorizeRoles("admin","trainer"), getWorkoutPlansByClient);
+router.get("/client/:clientId", verifyToken, authorizeRoles("admin","trainer", "client"), getWorkoutPlansByClient);
 
 /**
  * @swagger

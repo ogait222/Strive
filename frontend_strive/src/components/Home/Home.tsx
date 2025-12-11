@@ -1,20 +1,29 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Home.css";
 import NavBar from "../NavBar/NavBar";
 
 
 export default function Home() {
-  
+  const navigate = useNavigate();
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
+    if (token && user) {
+      navigate("/dashboard");
+    }
+  }, [navigate]);
   return (
     <div className="home-container">
       <NavBar />
       <section className="main-section">
         <div className="main-text">
           <h1>
-            Treinos inteligentes. <br/> Acompanhamento real.
+            Treinos inteligentes. <br /> Acompanhamento real.
           </h1>
           <p>
-            Transforme os seus treinos com orientação profissional, planos inteligentes e acompanhamento contínuo para alcançar resultados reais. 
+            Transforme os seus treinos com orientação profissional, planos inteligentes e acompanhamento contínuo para alcançar resultados reais.
           </p>
 
           <div className="main-buttons">
@@ -23,7 +32,7 @@ export default function Home() {
           </div>
         </div>
 
-      
+
       </section>
 
       <section className="main-features">
@@ -40,6 +49,6 @@ export default function Home() {
           <p>Acompanhe o seu progresso com gráficos e estatísticas claras para analísar o seu próprio progresso.</p>
         </div>
       </section>
-    </div>
+    </div >
   );
 }
