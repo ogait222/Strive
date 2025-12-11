@@ -3,6 +3,7 @@ import { verifyToken, authorizeRoles } from "../middlewares/authMiddleware";
 import {
   getNotifications,
   markNotificationAsRead,
+  markAllNotificationsAsRead,
   createNotification,
   deleteNotification,
 } from "../controllers/notificationController";
@@ -145,6 +146,24 @@ router.delete(
   verifyToken,
   authorizeRoles("admin"),
   deleteNotification
+);
+
+/**
+ * @swagger
+ * /notifications/read-all:
+ *   post:
+ *     summary: Marcar todas as notificações como lidas
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Todas as notificações marcadas como lidas
+ */
+router.post(
+  "/read-all",
+  verifyToken,
+  markAllNotificationsAsRead
 );
 
 export default router;

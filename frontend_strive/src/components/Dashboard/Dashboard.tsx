@@ -21,6 +21,7 @@ interface UserProfile {
 export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // Dashboard items for Clients
@@ -34,7 +35,12 @@ export default function Dashboard() {
     {
       title: "Notificações",
       description: "Verifique suas notificações",
-      icon: "🔔",
+      icon: (
+        <div className="notification-badge-container">
+          <span>🔔</span>
+          {unreadCount > 0 && <div className="unread-badge">{unreadCount > 9 ? '9+' : unreadCount}</div>}
+        </div>
+      ),
       path: "/notifications"
     },
     {
@@ -62,7 +68,12 @@ export default function Dashboard() {
     {
       title: "Notificações",
       description: "Verifique suas notificações",
-      icon: "🔔",
+      icon: (
+        <div className="notification-badge-container">
+          <span>🔔</span>
+          {unreadCount > 0 && <div className="unread-badge">{unreadCount > 9 ? '9+' : unreadCount}</div>}
+        </div>
+      ),
       path: "/notifications"
     },
     {
@@ -81,12 +92,21 @@ export default function Dashboard() {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const response = await axios.get("http://localhost:3500/users/me", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setUser(response.data);
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+
+        const [profileRes, notificationsRes] = await Promise.all([
+          axios.get("http://localhost:3500/users/me", config),
+          axios.get("http://localhost:3500/notifications", config)
+        ]);
+
+        setUser(profileRes.data);
+
+        // Count unread notifications
+        const count = notificationsRes.data.filter((n: any) => !n.read).length;
+        setUnreadCount(count);
+
       } catch (error) {
-        console.error("Erro ao carregar perfil:", error);
+        console.error("Erro ao carregar dados:", error);
       } finally {
         setLoading(false);
       }

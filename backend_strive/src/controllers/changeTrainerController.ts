@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import ChangeTrainer from "../models/ChangeTrainer";
 import User from "../models/Users";
+import Notification from "../models/Notification";
 
 export const requestTrainerChange = async (req: Request, res: Response) => {
   try {
@@ -89,6 +90,13 @@ export const updateTrainerChangeRequest = async (req: Request, res: Response) =>
     if (status === "approved") {
       await User.findByIdAndUpdate(updated.client, {
         trainerId: updated.newTrainer,
+      });
+
+      await Notification.create({
+        recipient: updated.client,
+        type: "changeTrainer",
+        message: "O teu pedido de mudança de treinador foi aceite!",
+        read: false,
       });
     }
     res.json(updated);

@@ -66,3 +66,18 @@ export const deleteNotification = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Erro ao eliminar notificação", error });
   }
 };
+
+export const markAllNotificationsAsRead = async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+
+    await Notification.updateMany(
+      { recipient: user.id, read: false },
+      { read: true }
+    );
+
+    res.json({ message: "Todas as notificações marcadas como lidas" });
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao atualizar notificações", error });
+  }
+};

@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import WorkoutPlan from "../models/WorkoutPlan";
+import Notification from "../models/Notification";
 
 
 export const createWorkoutPlan = async (req: Request, res: Response) => {
@@ -89,6 +90,15 @@ export const updateDayStatus = async (req: Request, res: Response) => {
 
     if (allDaysDone) {
       plan.active = false;
+    }
+
+    if (status === 'failed') {
+      await Notification.create({
+        recipient: plan.client,
+        type: "missedWorkout", // or "message" if you prefer
+        message: "Não desanimes! A persistência é o caminho do êxito. O próximo treino será melhor!",
+        read: false,
+      });
     }
 
     await plan.save();
