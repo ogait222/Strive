@@ -3,10 +3,10 @@ import {
   createOrGetChat,
   sendMessage,
   getMessages,
-  getMessages,
   getUserChats,
   markMessagesAsRead,
 } from "../controllers/chatController";
+import { verifyToken } from "../middlewares/authMiddleware";
 
 const router = Router();
 
@@ -237,8 +237,6 @@ router.get("/user/:userId", getUserChats);
 // Step 19 output: import { Router } from "express"; ... no verifyToken.
 // I need to import verifyToken.
 
-router.put("/:chatId/read", require("../middlewares/authMiddleware").verifyToken, markMessagesAsRead);
+router.put("/:chatId/read", verifyToken, markMessagesAsRead);
 
 export default router;
-
-

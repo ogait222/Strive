@@ -5,14 +5,14 @@ import { useNavigate } from "react-router-dom";
 import NavBar from "../NavBar/NavBar";
 import "./Chat.css";
 
-interface User {
+interface IUser {
     _id: string;
     name: string;
     username: string;
     role: string;
 }
 
-interface Message {
+interface IMessage {
     _id: string;
     chatId: string;
     sender: string;
@@ -20,23 +20,23 @@ interface Message {
     createdAt: string;
 }
 
-interface Chat {
+interface IChat {
     _id: string;
-    participants: User[];
-    lastMessage?: Message;
+    participants: IUser[];
+    lastMessage?: IMessage;
     updatedAt: string;
     unreadCount?: number;
 }
 
 const Chat: React.FC = () => {
-    const [currentUser, setCurrentUser] = useState<User | null>(null);
-    const [chats, setChats] = useState<Chat[]>([]);
-    const [activeChat, setActiveChat] = useState<Chat | null>(null);
-    const [messages, setMessages] = useState<Message[]>([]);
+    const [currentUser, setCurrentUser] = useState<IUser | null>(null);
+    const [chats, setChats] = useState<IChat[]>([]);
+    const [activeChat, setActiveChat] = useState<IChat | null>(null);
+    const [messages, setMessages] = useState<IMessage[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [socket, setSocket] = useState<Socket | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
-    const [searchResults, setSearchResults] = useState<User[]>([]);
+    const [searchResults, setSearchResults] = useState<IUser[]>([]);
     const [showSearch, setShowSearch] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
@@ -77,7 +77,7 @@ const Chat: React.FC = () => {
     // Socket Listeners
     useEffect(() => {
         if (socket) {
-            socket.on("newMessage", (message: Message) => {
+            socket.on("newMessage", (message: IMessage) => {
                 if (activeChat && message.chatId === activeChat._id) {
                     setMessages((prev) => {
                         if (prev.some(m => m._id === message._id)) return prev;
@@ -103,6 +103,10 @@ const Chat: React.FC = () => {
             socket?.off("newMessage");
         };
     }, [socket, activeChat]);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
 
     // ...
 
@@ -161,7 +165,7 @@ const Chat: React.FC = () => {
         }
     };
 
-    const startChat = async (targetUser: User) => {
+    const startChat = async (targetUser: IUser) => {
         try {
             const token = localStorage.getItem("token");
             await axios.post(
@@ -186,7 +190,7 @@ const Chat: React.FC = () => {
         }
     };
 
-    const selectChat = async (chat: Chat) => {
+    const selectChat = async (chat: IChat) => {
         setActiveChat(chat);
         // Mark as read immediately when selecting
         if (chat.unreadCount && chat.unreadCount > 0) {
@@ -243,7 +247,7 @@ const Chat: React.FC = () => {
         }
     };
 
-    const getOtherParticipant = (chat: Chat) => {
+    const getOtherParticipant = (chat: IChat) => {
         return chat.participants.find((p) => p._id !== currentUser?._id);
     };
 
