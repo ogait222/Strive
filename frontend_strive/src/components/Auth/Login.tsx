@@ -63,7 +63,7 @@ export default function Login({ onSwitchToRegister }: LoginProps) {
               type="text"
               id="username"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => setUsername(e.target.value.replace(/\s+/g, ""))}
               placeholder="teu_username"
             />
           </div>
@@ -74,7 +74,7 @@ export default function Login({ onSwitchToRegister }: LoginProps) {
               type="password"
               id="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value.replace(/\s+/g, ""))}
               placeholder="••••••••"
             />
           </div>

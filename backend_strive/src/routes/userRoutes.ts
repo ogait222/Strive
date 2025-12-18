@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getTrainers, selectTrainer, getMe, getStudents, searchUsers } from "../controllers/userController";
+import { getTrainers, selectTrainer, getMe, getStudents, searchUsers, updateAvatar } from "../controllers/userController";
 import { verifyToken, authorizeRoles } from "../middlewares/authMiddleware";
 
 const router = Router();
@@ -96,6 +96,7 @@ router.get("/students", verifyToken, authorizeRoles("trainer"), getStudents);
  *         description: Lista de utilizadores encontrados
  */
 router.get("/search", verifyToken, searchUsers);
+router.put("/me/avatar", verifyToken, updateAvatar);
 
 
 export default router;

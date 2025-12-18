@@ -43,6 +43,11 @@
     transform: scale(1.1);
 }
 
+.new-chat-btn:focus {
+    outline: none;
+    border:none
+}
+
 .user-search-container {
     padding: 10px 20px;
     border-bottom: 1px solid #e2e8f0;

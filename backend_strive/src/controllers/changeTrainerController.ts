@@ -88,14 +88,29 @@ export const updateTrainerChangeRequest = async (req: Request, res: Response) =>
       return res.status(404).json({ message: "Solicitação não encontrada" });
 
     if (status === "approved") {
-      await User.findByIdAndUpdate(updated.client, {
+      const clientUser = await User.findByIdAndUpdate(updated.client, {
         trainerId: updated.newTrainer,
-      });
+      }, { new: true }).select("username email name");
 
       await Notification.create({
         recipient: updated.client,
         type: "changeTrainer",
         message: "O teu pedido de mudança de treinador foi aceite!",
+        read: false,
+      });
+
+      const reasonText =
+        (updated.reason && updated.reason.trim().length > 0)
+          ? updated.reason.trim()
+          : "Motivo não indicado";
+
+      const clientLabel =
+        clientUser?.username || clientUser?.name || clientUser?.email || "O teu aluno";
+
+      await Notification.create({
+        recipient: updated.currentTrainer,
+        type: "changeTrainer",
+        message: `${clientLabel} deixou de ser teu aluno. Motivo: ${reasonText}`,
         read: false,
       });
     }
@@ -115,4 +130,3 @@ export const deleteTrainerChangeRequest = async (req: Request, res: Response) =>
     res.status(500).json({ message: "Erro ao deletar solicitação", error });
   }
 };
-

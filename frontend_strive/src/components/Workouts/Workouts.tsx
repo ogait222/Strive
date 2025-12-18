@@ -16,6 +16,8 @@ interface WorkoutDay {
   day: string;
   status?: 'pending' | 'completed' | 'failed';
   exercises: Exercise[];
+  completionPhotoProof?: string; //ainda não implementado
+  calendarDate?: string;
 }
 
 interface WorkoutPlan {
@@ -24,6 +26,7 @@ interface WorkoutPlan {
   description?: string;
   days: WorkoutDay[];
   active?: boolean;
+  archived?: boolean;
   client: any;
   trainer: {
     _id: string;
@@ -35,10 +38,13 @@ interface WorkoutPlan {
 
 export default function Workouts() {
   const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
-  const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
+  const [activeTab, setActiveTab] = useState<'active' | 'history' | 'archived'>('active');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
+  const [photoModalData, setPhotoModalData] = useState<{ planId: string; dayId: string; dayLabel: string } | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoError, setPhotoError] = useState("");
 
   const fetchWorkoutPlans = async () => {
     try {
@@ -72,14 +78,14 @@ export default function Workouts() {
     fetchWorkoutPlans();
   }, []);
 
-  const handleStatusUpdate = async (planId: string, dayId: string, status: string) => {
+  const handleStatusUpdate = async (planId: string, dayId: string, status: string, completionPhotoProof?: string) => {
     try {
       setUpdating(dayId);
       const token = localStorage.getItem("token");
 
       await axios.patch(
         `http://localhost:3500/workouts/${planId}/day/${dayId}/status`,
-        { status },
+        { status, completionPhotoProof },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -102,9 +108,75 @@ export default function Workouts() {
     return Math.round((completedOrFailed / days.length) * 100);
   };
 
+  const handleCompleteClick = (planId: string, dayId: string, dayLabel: string, status?: WorkoutDay["status"]) => {
+    if (status && status !== "pending") return;
+    setPhotoModalData({ planId, dayId, dayLabel });
+    setPhotoFile(null);
+    setPhotoError("");
+  };
+
+  const handleFailClick = (planId: string, dayId: string, status?: WorkoutDay["status"]) => {
+    if (status && status !== "pending") return;
+    handleStatusUpdate(planId, dayId, "failed");
+  };
+
+  const handlePhotoSubmit = async () => {
+    if (!photoModalData) return;
+    if (!photoFile) {
+      setPhotoError("Carrega uma foto para concluir o treino.");
+      return;
+    }
+
+    try {
+      setPhotoError("");
+      const toBase64 = (file: File) =>
+        new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+      const photoString = await toBase64(photoFile);
+      await handleStatusUpdate(photoModalData.planId, photoModalData.dayId, "completed", photoString);
+      setPhotoModalData(null);
+      setPhotoFile(null);
+    } catch (err) {
+      setPhotoError("Erro ao enviar a foto. Tenta novamente.");
+    }
+  };
+
+  const handleArchivePlan = async (planId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.patch(
+        `http://localhost:3500/workouts/${planId}/archive`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      await fetchWorkoutPlans();
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Erro ao arquivar plano");
+    }
+  };
+
+  const plansPerPage = 4;
+  const [page, setPage] = useState(1);
+
   const filteredPlans = workoutPlans.filter(plan =>
-    activeTab === 'active' ? plan.active !== false : plan.active === false
+    activeTab === 'active'
+      ? plan.active !== false && !plan.archived
+      : activeTab === 'archived'
+      ? plan.archived === true
+      : plan.active === false && !plan.archived
   );
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPlans.length / plansPerPage));
+  const paginatedPlans = filteredPlans.slice((page - 1) * plansPerPage, page * plansPerPage);
 
   if (loading) {
     return (
@@ -147,16 +219,24 @@ export default function Workouts() {
           >
             Histórico
           </button>
+          <button
+            className={`tab-button ${activeTab === 'archived' ? 'active' : ''}`}
+            onClick={() => setActiveTab('archived')}
+          >
+            Arquivados
+          </button>
         </div>
 
         {filteredPlans.length === 0 ? (
           <p>
             {activeTab === 'active'
               ? "Não há planos de treino ativos."
+              : activeTab === 'archived'
+              ? "Não há planos arquivados."
               : "Não há histórico de planos."}
           </p>
         ) : (
-          filteredPlans.map((plan) => {
+          paginatedPlans.map((plan) => {
             const progress = calculateProgress(plan.days);
 
             return (
@@ -176,26 +256,35 @@ export default function Workouts() {
 
                 {plan.description && <p><strong>Descrição:</strong> {plan.description}</p>}
                 {plan.trainer && <p><strong>Treinador:</strong> {plan.trainer.username}</p>}
+                {activeTab === 'history' && !plan.archived && (
+                  <div className="archive-row">
+                    <button className="archive-btn" onClick={() => handleArchivePlan(plan._id)}>
+                      Arquivar plano concluído
+                    </button>
+                  </div>
+                )}
 
                 <div className="week-schedule">
                   {plan.days && plan.days.length > 0 ? (
                     plan.days.map((dayData, index) => (
                       <div key={index} className={`day-card ${dayData.status || 'pending'}`}>
                         <div className="day-header">
-                          <h3>{dayData.day}</h3>
+                          <div className="day-title">
+                            <h3>{dayData.day}</h3>
+                          </div>
                           {activeTab === 'active' && (
                             <div className="status-actions">
                               <button
                                 className={`status-btn complete ${dayData.status === 'completed' ? 'selected' : ''}`}
-                                onClick={() => handleStatusUpdate(plan._id, dayData._id || '', 'completed')}
-                                disabled={!!updating}
+                                onClick={() => handleCompleteClick(plan._id, dayData._id || '', dayData.day, dayData.status)}
+                                disabled={!!updating || (dayData.status && dayData.status !== 'pending')}
                               >
                                 ✓
                               </button>
                               <button
                                 className={`status-btn fail ${dayData.status === 'failed' ? 'selected' : ''}`}
-                                onClick={() => handleStatusUpdate(plan._id, dayData._id || '', 'failed')}
-                                disabled={!!updating}
+                                onClick={() => handleFailClick(plan._id, dayData._id || '', dayData.status)}
+                                disabled={!!updating || (dayData.status && dayData.status !== 'pending')}
                               >
                                 ✕
                               </button>
@@ -226,6 +315,9 @@ export default function Workouts() {
                             ))}
                           </ul>
                         )}
+                        {dayData.completionPhotoProof && (
+                          <div className="photo-proof-tag">Prova fotográfica enviada</div>
+                        )}
                       </div>
                     ))
                   ) : (
@@ -237,6 +329,47 @@ export default function Workouts() {
           })
         )}
       </div>
+      {filteredPlans.length > 0 && (
+        <div className="pagination">
+          <button disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+            Anterior
+          </button>
+          <span>
+            {page} / {totalPages}
+          </span>
+          <button disabled={page === totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
+            Seguinte
+          </button>
+        </div>
+      )}
+      {photoModalData && (
+        <div className="photo-modal-backdrop">
+          <div className="photo-modal">
+            <h3>Concluir treino - {photoModalData.dayLabel}</h3>
+            <p>Carrega uma foto como prova do treino deste dia.</p>
+            <div className="file-input-wrapper">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setPhotoFile(file);
+                  setPhotoError("");
+                }}
+              />
+            </div>
+            {photoError && <div className="photo-error">{photoError}</div>}
+            <div className="modal-actions">
+              <button className="secondary-btn" onClick={() => setPhotoModalData(null)} disabled={!!updating}>
+                Cancelar
+              </button>
+              <button className="primary-btn" onClick={handlePhotoSubmit} disabled={!!updating}>
+                Enviar e concluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -13,8 +13,11 @@ interface Trainer {
 
 export default function TrainerSelection() {
     const [trainers, setTrainers] = useState<Trainer[]>([]);
+    const [filtered, setFiltered] = useState<Trainer[]>([]);
+    const [query, setQuery] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [reason, setReason] = useState("");
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -31,6 +34,7 @@ export default function TrainerSelection() {
                 });
 
                 setTrainers(response.data);
+                setFiltered(response.data);
             } catch (err: any) {
                 setError("Erro ao carregar treinadores.");
             } finally {
@@ -46,7 +50,7 @@ export default function TrainerSelection() {
             const token = localStorage.getItem("token");
             await axios.put(
                 "http://localhost:3500/users/select-trainer",
-                { trainerId },
+                { trainerId, reason },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
@@ -55,6 +59,22 @@ export default function TrainerSelection() {
         } catch (err: any) {
             alert("Erro ao selecionar treinador: " + (err.response?.data?.message || "Erro desconhecido"));
         }
+    };
+
+    const handleSearch = (value: string) => {
+        setQuery(value);
+        const term = value.trim().toLowerCase();
+        if (!term) {
+            setFiltered(trainers);
+            return;
+        }
+        setFiltered(
+            trainers.filter((t) =>
+                t.name.toLowerCase().includes(term) ||
+                t.username.toLowerCase().includes(term) ||
+                t.email.toLowerCase().includes(term)
+            )
+        );
     };
 
     if (loading) {
@@ -73,10 +93,18 @@ export default function TrainerSelection() {
             <NavBar />
             <div className="content">
                 <h1>Escolha o seu Treinador</h1>
+                <div className="search-row">
+                    <input
+                        type="text"
+                        placeholder="Pesquisar por nome, username ou email"
+                        value={query}
+                        onChange={(e) => handleSearch(e.target.value)}
+                    />
+                </div>
                 {error && <div className="error-message">{error}</div>}
 
                 <div className="trainers-grid">
-                    {trainers.map((trainer) => (
+                    {filtered.map((trainer) => (
                         <div key={trainer._id} className="trainer-card">
                             <div className="trainer-avatar">
                                 {trainer.name.charAt(0).toUpperCase()}

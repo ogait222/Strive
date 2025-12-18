@@ -25,7 +25,15 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "username" || name === "email") {
+      const sanitized = value.replace(/\s+/g, "");
+      setFormData((prev) => ({ ...prev, [name]: sanitized }));
+    } else if (name === "password" || name === "confirmPassword") {
+      const sanitized = value.replace(/\s+/g, "");
+      setFormData((prev) => ({ ...prev, [name]: sanitized }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const validateEmail = (email: string) => {

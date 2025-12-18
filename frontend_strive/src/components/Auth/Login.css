@@ -178,6 +178,11 @@
   transform: translateY(0);
 }
 
+.btn-auth:focus {
+  outline: none;
+  border: none;
+}
+
 .auth-footer {
   text-align: center;
   margin-bottom: 20px;
@@ -255,8 +260,9 @@
   transition: background-color 0.3s ease;
 }
 
-.close-btn:hover {
-  background-color: #f0f0f0;
+.close-btn:focus {
+  outline: none;
+  border: none;
 }
 
 @keyframes slideUp {
@@ -405,7 +411,10 @@
   color: #FF6F00;
 }
 
-
+.btn-switch:focus {
+  outline: none;
+  border: none;
+}
 
 @media (max-width: 480px) {
   .auth-card {

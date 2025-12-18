@@ -1,5 +1,9 @@
 import { Request, Response } from "express";
 import User from "../models/Users";
+interface AuthenticatedRequest extends Request {
+    user?: { id: string; role: string };
+}
+import Notification from "../models/Notification";
 
 export const getTrainers = async (req: Request, res: Response) => {
     try {
@@ -12,7 +16,7 @@ export const getTrainers = async (req: Request, res: Response) => {
 
 export const selectTrainer = async (req: Request, res: Response) => {
     try {
-        const { trainerId } = req.body;
+        const { trainerId, reason } = req.body;
         const userId = (req as any).user.id; // From verifyToken middleware
 
         const user = await User.findById(userId);
@@ -24,8 +28,27 @@ export const selectTrainer = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Treinador inválido" });
         }
 
+        const previousTrainerId = user.trainerId?.toString();
+        if (previousTrainerId === trainerId) {
+            return res.status(400).json({ message: "Já estás associado a este treinador." });
+        }
+
         user.trainerId = trainerId;
         await user.save();
+
+        // Notify previous trainer, if any
+        if (previousTrainerId) {
+            const reasonText = reason && typeof reason === "string" && reason.trim().length > 0
+                ? reason.trim()
+                : "Motivo não indicado";
+
+            await Notification.create({
+                recipient: previousTrainerId,
+                type: "changeTrainer",
+                message: `${user.username || user.email} deixou de ser teu aluno. Motivo: ${reasonText}`,
+                read: false,
+            });
+        }
 
         res.json({ message: "Treinador selecionado com sucesso", user });
     } catch (error) {
@@ -81,5 +104,26 @@ export const searchUsers = async (req: Request, res: Response) => {
         res.json(users);
     } catch (error) {
         res.status(500).json({ message: "Erro ao pesquisar utilizadores", error });
+    }
+};
+
+export const updateAvatar = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const userId = req.user?.id;
+        const { avatarUrl } = req.body;
+
+        if (!userId) return res.status(401).json({ message: "Não autenticado" });
+        if (!avatarUrl) return res.status(400).json({ message: "avatarUrl obrigatório" });
+
+        const updated = await User.findByIdAndUpdate(
+            userId,
+            { avatarUrl },
+            { new: true }
+        ).select("-password");
+
+        if (!updated) return res.status(404).json({ message: "Utilizador não encontrado" });
+        res.json(updated);
+    } catch (error) {
+        res.status(500).json({ message: "Erro ao atualizar avatar", error });
     }
 };

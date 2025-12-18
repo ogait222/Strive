@@ -11,19 +11,23 @@
 
 .students-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 2rem;
-    margin-top: 2rem;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
 }
 
 .student-card {
     background: var(--card-bg);
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 1rem;
     color: var(--text-color);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s, box-shadow 0.2s;
     border: 1px solid var(--card-border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    align-items: flex-start;
 }
 
 .student-card:hover {
@@ -42,10 +46,16 @@
     margin: 0.25rem 0;
 }
 
+.student-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    width: 100%;
+}
+
 .btn-create-plan {
     width: 100%;
-    margin-top: 1rem;
-    padding: 0.75rem;
+    padding: 0.85rem;
     background-color: var(--primary-color);
     color: white;
     border: none;
@@ -57,6 +67,185 @@
 
 .btn-create-plan:hover {
     background-color: var(--primary-hover);
+}
+
+.btn-view-plans {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.85rem;
+    background-color: #111111;
+    color: #ffffff;
+    border: 1px solid #111111;
+    border-radius: 8px;
+    font-weight: 650;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-view-plans:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+}
+
+.student-plans-panel {
+    margin-top: 2rem;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 16px 35px rgba(0, 0, 0, 0.08);
+}
+
+.student-plans-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.btn-close-panel {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    padding: 0.5rem 0.8rem;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 800;
+    color: var(--secondary-text);
+    margin: 0 0 0.35rem 0;
+}
+
+.muted {
+    color: var(--secondary-text);
+    margin: 0.2rem 0;
+}
+
+.plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.plans-column h4 {
+    margin: 0 0 0.75rem 0;
+}
+
+.plan-chip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid var(--card-border);
+    background: #fafafa;
+    margin-bottom: 0.75rem;
+}
+
+.plan-chip h5 {
+    margin: 0 0 0.2rem 0;
+}
+
+.plan-chip-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.chip-btn {
+    background: #111111;
+    color: #ffffff;
+    border: 1px solid #111111;
+    border-radius: 8px;
+    padding: 0.50rem 4.50rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.status-dot.active {
+    background: #22c55e;
+}
+
+.status-dot.archived {
+    background: #9ca3af;
+}
+
+.plan-details-modal {
+    max-width: 900px;
+}
+
+.plan-days-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.day-detail-card {
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 1rem;
+    background: var(--card-bg);
+}
+
+.day-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.status-pill {
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-weight: 800;
+    text-transform: capitalize;
+}
+
+.status-pill.completed {
+    background: #e8f6ef;
+    color: #1b9a5f;
+}
+
+.status-pill.failed {
+    background: #fcecec;
+    color: #d64545;
+}
+
+.status-pill.pending {
+    background: #f5f5f5;
+    color: #555;
+}
+
+.detail-exercise-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0.75rem 0;
+}
+
+.detail-exercise-list li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.photo-proof-block {
+    margin-top: 0.75rem;
+}
+
+.photo-proof-img {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid var(--card-border);
 }
 
 /* Modal Styles */
@@ -135,25 +324,40 @@
 }
 
 .day-item {
-    background-color: var(--bg-color);
-    padding: 1rem;
-    border-radius: 8px;
+    background-color: #fff;
+    padding: 1.25rem;
+    border-radius: 12px;
     margin-bottom: 1rem;
     border: 1px solid var(--card-border);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
 }
 
 .day-header-inputs {
     display: flex;
-    justify-content: space-between;
+    gap: 0.75rem;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.day-label {
+    font-weight: 800;
+    color: var(--text-color);
+    background: #f7f7f7;
+    border: 1px solid var(--card-border);
+    padding: 0.55rem 0.8rem;
+    border-radius: 10px;
+    text-transform: capitalize;
 }
 
 .btn-remove-day {
-    background: none;
-    border: none;
+    background: rgba(255, 68, 68, 0.08);
+    border: 1px solid rgba(255, 68, 68, 0.2);
     color: #ff4444;
     cursor: pointer;
+    border-radius: 8px;
+    padding: 0.5rem 0.8rem;
+    font-weight: 700;
 }
 
 .exercises-list {
@@ -162,19 +366,102 @@
     border-left: 2px solid var(--card-border);
 }
 
-.exercise-item {
+.date-picker-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     margin-bottom: 1rem;
-    padding: 1rem;
-    background-color: var(--card-bg);
-    border-radius: 6px;
+    flex-wrap: wrap;
+}
+
+.date-picker-row input[type="date"] {
+    padding: 0.6rem 0.8rem;
+    border-radius: 10px;
     border: 1px solid var(--card-border);
 }
 
-.exercise-grid {
+.date-preview {
+    padding: 0.35rem 0.75rem;
+    background: rgba(0,0,0,0.05);
+    border-radius: 999px;
+    font-weight: 700;
+    color: var(--secondary-text);
+    text-transform: capitalize;
+}
+
+.exercise-item {
+    margin-bottom: 1rem;
+    padding: 1.2rem;
+    background: linear-gradient(145deg, #ffffff 0%, #fafafa 100%);
+    border-radius: 14px;
+    border: 1px solid var(--card-border);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.06);
+}
+
+
+.exercise-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.exercise-chip {
+    background: rgba(240, 88, 45, 0.1);
+    color: var(--primary-color);
+    padding: 0.45rem 0.8rem;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    letter-spacing: 0.02em;
+}
+
+.exercise-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 0.9rem;
+}
+
+.exercise-field label {
+    font-weight: 700;
+    color: var(--secondary-text);
+    font-size: 0.95rem;
+}
+
+.exercise-field input {
+    padding: 0.75rem 0.9rem;
+    border-radius: 10px;
+    border: 1px solid var(--card-border);
+    background: #fff;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.exercise-field input:focus {
+    outline: 2px solid rgba(240, 88, 45, 0.4);
+}
+
+.exercise-meta-grid {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 1rem;
-    margin-bottom: 0.5rem;
+}
+
+.btn-remove-exercise {
+    background: rgba(255, 68, 68, 0.08);
+    border: 1px solid rgba(255, 68, 68, 0.2);
+    color: #ff4444;
+    cursor: pointer;
+    border-radius: 10px;
+    padding: 0.5rem 0.9rem;
+    font-weight: 800;
+    transition: all 0.2s ease;
+}
+
+.btn-remove-exercise:hover {
+    background: rgba(255, 68, 68, 0.12);
+    transform: translateY(-1px);
 }
 
 .btn-add-day,
@@ -197,11 +484,12 @@
 }
 
 .btn-add-exercise {
-    background-color: var(--bg-color);
-    border: 1px solid var(--secondary-text);
-    color: var(--secondary-text);
+    background-color: var(--primary-color);
+    border: none;
+    color: #ffffff;
     font-size: 0.9rem;
     margin-top: 0.5rem;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.08);
 }
 
 .btn-submit-plan {

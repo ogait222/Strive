@@ -11,6 +11,7 @@ export interface IUser {
   createdAt: Date;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  avatarUrl?: string;
 }
 
 export interface IUserMethods {
@@ -48,6 +49,7 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>({
     enum: ["client", "trainer", "admin"],
     default: "client",
   },
+  avatarUrl: { type: String },
   trainerId: { type: Schema.Types.ObjectId, ref: "User", default: null },
   createdAt: { type: Date, default: Date.now },
   resetPasswordExpires : { type: Date },
@@ -69,4 +71,3 @@ userSchema.methods.comparePassword = async function (password: string) {
 export type UserDocument = mongoose.HydratedDocument<IUser, IUserMethods>;
 export const User = model<IUser, UserModel>("User", userSchema);
 export default User;
-

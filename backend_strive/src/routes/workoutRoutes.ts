@@ -6,6 +6,8 @@ import {
   updateWorkoutPlan,
   deleteWorkoutPlan,
   updateDayStatus,
+  clearClientHistory,
+  archiveWorkoutPlan,
 } from "../controllers/workoutController";
 import { authorizeRoles, verifyToken } from "../middlewares/authMiddleware";
 
@@ -174,6 +176,20 @@ router.put("/:id", verifyToken, authorizeRoles("admin", "trainer"), updateWorkou
  *         description: Plano não encontrado
  */
 router.delete("/:id", verifyToken, authorizeRoles("admin", "trainer"), deleteWorkoutPlan);
+
+router.delete(
+  "/client/:clientId/history",
+  verifyToken,
+  authorizeRoles("admin", "trainer", "client"),
+  clearClientHistory
+);
+
+router.patch(
+  "/:id/archive",
+  verifyToken,
+  authorizeRoles("admin", "trainer", "client"),
+  archiveWorkoutPlan
+);
 
 /**
  * @swagger

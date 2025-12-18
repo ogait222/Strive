@@ -2,6 +2,13 @@ import { Request, Response } from "express";
 import WorkoutPlan from "../models/WorkoutPlan";
 import Notification from "../models/Notification";
 
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: string;
+    role: string;
+  };
+}
+
 
 export const createWorkoutPlan = async (req: Request, res: Response) => {
   try {
@@ -70,7 +77,7 @@ export const deleteWorkoutPlan = async (req: Request, res: Response) => {
 export const updateDayStatus = async (req: Request, res: Response) => {
   try {
     const { id, dayId } = req.params;
-    const { status } = req.body;
+    const { status, completionPhotoProof } = req.body;
 
     if (!['pending', 'completed', 'failed'].includes(status)) {
       return res.status(400).json({ message: "Status inválido" });
@@ -83,7 +90,18 @@ export const updateDayStatus = async (req: Request, res: Response) => {
     const day = plan.days.find((d: any) => d._id.toString() === dayId);
     if (!day) return res.status(404).json({ message: "Dia não encontrado no plano" });
 
+    if (day.status && day.status !== "pending") {
+      return res.status(400).json({ message: "O status deste dia já foi definido e não pode ser alterado." });
+    }
+
+    if (status === "completed" && !completionPhotoProof) {
+      return res.status(400).json({ message: "É necessário enviar a prova fotográfica para concluir o treino." });
+    }
+
     day.status = status;
+    if (completionPhotoProof) {
+      day.completionPhotoProof = completionPhotoProof;
+    }
 
     // Verificar se todos os dias estão concluídos ou falhados
     const allDaysDone = plan.days.every(d => d.status !== 'pending' && d.status !== undefined);
@@ -105,5 +123,48 @@ export const updateDayStatus = async (req: Request, res: Response) => {
     res.json(plan);
   } catch (error) {
     res.status(500).json({ message: "Erro ao atualizar status do dia", error });
+  }
+};
+
+export const clearClientHistory = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { clientId } = req.params;
+    const requester = req.user;
+
+    if (requester?.role === "client" && requester.id !== clientId) {
+      return res.status(403).json({ message: "Não podes limpar o histórico de outro utilizador." });
+    }
+
+    const result = await WorkoutPlan.deleteMany({ client: clientId, active: false });
+    res.json({ deleted: result.deletedCount });
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao limpar histórico de treinos", error });
+  }
+};
+
+export const archiveWorkoutPlan = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const requester = req.user;
+    const plan = await WorkoutPlan.findById(id);
+    if (!plan) return res.status(404).json({ message: "Plano não encontrado" });
+
+    if (requester?.role === "client" && plan.client.toString() !== requester.id) {
+      return res.status(403).json({ message: "Não podes arquivar planos de outro utilizador." });
+    }
+
+    if (plan.active !== false) {
+      return res.status(400).json({ message: "Só podes arquivar planos concluídos." });
+    }
+
+    if (plan.archived) {
+      return res.status(400).json({ message: "Plano já se encontra arquivado." });
+    }
+
+    plan.archived = true;
+    await plan.save();
+    res.json(plan);
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao arquivar plano", error });
   }
 };
