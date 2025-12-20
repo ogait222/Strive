@@ -9,6 +9,51 @@
     padding: 2rem;
 }
 
+.students-toolbar {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin: 1.5rem 0 1rem;
+    padding: 1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+}
+
+.search-field,
+.sort-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 220px;
+    flex: 1 1 260px;
+}
+
+.search-field label,
+.sort-field label {
+    font-weight: 700;
+    color: var(--secondary-text);
+    font-size: 0.9rem;
+    letter-spacing: 0.02em;
+}
+
+.search-field input,
+.sort-field select {
+    padding: 0.7rem 0.9rem;
+    border-radius: 10px;
+    border: 1px solid var(--card-border);
+    background: #ffffff;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.search-field input:focus,
+.sort-field select:focus {
+    outline: 2px solid rgba(240, 88, 45, 0.3);
+}
+
 .students-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));

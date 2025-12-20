@@ -94,3 +94,61 @@ export const markMessagesAsRead = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Erro ao marcar mensagens como lidas", error: err });
   }
 };
+
+export const archiveChat = async (req: Request, res: Response) => {
+  try {
+    const { chatId } = req.params;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Não autenticado" });
+    }
+
+    const chat = await Chat.findById(chatId);
+    if (!chat) return res.status(404).json({ message: "Chat não encontrado" });
+
+    const isParticipant = chat.participants.some((id) => id.toString() === userId);
+    if (!isParticipant) {
+      return res.status(403).json({ message: "Sem permissão para arquivar este chat" });
+    }
+
+    const updated = await Chat.findByIdAndUpdate(
+      chatId,
+      { $addToSet: { archivedBy: userId } },
+      { new: true }
+    );
+
+    res.status(200).json(updated);
+  } catch (err) {
+    res.status(500).json({ message: "Erro ao arquivar chat", error: err });
+  }
+};
+
+export const unarchiveChat = async (req: Request, res: Response) => {
+  try {
+    const { chatId } = req.params;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Não autenticado" });
+    }
+
+    const chat = await Chat.findById(chatId);
+    if (!chat) return res.status(404).json({ message: "Chat não encontrado" });
+
+    const isParticipant = chat.participants.some((id) => id.toString() === userId);
+    if (!isParticipant) {
+      return res.status(403).json({ message: "Sem permissão para desarquivar este chat" });
+    }
+
+    const updated = await Chat.findByIdAndUpdate(
+      chatId,
+      { $pull: { archivedBy: userId } },
+      { new: true }
+    );
+
+    res.status(200).json(updated);
+  } catch (err) {
+    res.status(500).json({ message: "Erro ao desarquivar chat", error: err });
+  }
+};

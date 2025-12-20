@@ -427,6 +427,26 @@
   padding: 0.5rem 0;
 }
 
+.reason-textarea {
+  width: 100%;
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 0.60rem 0.60rem;
+  font-family: var(--font-family);
+  font-size: 0.95rem;
+  color: var(--text-color);
+  background: #fafafa;
+  resize: vertical;
+  min-height: 110px;
+}
+
+.reason-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(240, 88, 45, 0.15);
+  background: #ffffff;
+}
+
 .photo-error {
   margin-top: 0.5rem;
   color: #c92a2a;

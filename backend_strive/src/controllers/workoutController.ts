@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import WorkoutPlan from "../models/WorkoutPlan";
 import Notification from "../models/Notification";
+import User from "../models/Users";
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -77,7 +78,9 @@ export const deleteWorkoutPlan = async (req: Request, res: Response) => {
 export const updateDayStatus = async (req: Request, res: Response) => {
   try {
     const { id, dayId } = req.params;
-    const { status, completionPhotoProof } = req.body;
+    const { status, completionPhotoProof, failureReason } = req.body;
+    const trimmedFailureReason =
+      typeof failureReason === "string" ? failureReason.trim() : "";
 
     if (!['pending', 'completed', 'failed'].includes(status)) {
       return res.status(400).json({ message: "Status inválido" });
@@ -98,9 +101,16 @@ export const updateDayStatus = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "É necessário enviar a prova fotográfica para concluir o treino." });
     }
 
+    if (status === "failed" && !trimmedFailureReason) {
+      return res.status(400).json({ message: "É necessário indicar o motivo da falha." });
+    }
+
     day.status = status;
     if (completionPhotoProof) {
       day.completionPhotoProof = completionPhotoProof;
+    }
+    if (status === "failed") {
+      day.failureReason = trimmedFailureReason;
     }
 
     // Verificar se todos os dias estão concluídos ou falhados
@@ -111,9 +121,19 @@ export const updateDayStatus = async (req: Request, res: Response) => {
     }
 
     if (status === 'failed') {
+      const clientUser = await User.findById(plan.client).select("name username");
+      const clientLabel = clientUser?.name || clientUser?.username || "O cliente";
+
+      await Notification.create({
+        recipient: plan.trainer,
+        type: "missedWorkout",
+        message: `${clientLabel} falhou o treino do dia (${day.day}). Motivo: ${trimmedFailureReason}`,
+        read: false,
+      });
+
       await Notification.create({
         recipient: plan.client,
-        type: "missedWorkout", // or "message" if you prefer
+        type: "missedWorkout", 
         message: "Não desanimes! A persistência é o caminho do êxito. O próximo treino será melhor!",
         read: false,
       });

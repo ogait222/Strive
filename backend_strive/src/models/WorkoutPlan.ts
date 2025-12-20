@@ -14,6 +14,7 @@ interface IWorkoutDay {
     status?: 'pending' | 'completed' | 'failed';
     exercises: IExercise[];
     completionPhotoProof?: string;
+    failureReason?: string;
 }
 
 export interface IWorkoutPlan extends Document {
@@ -49,6 +50,7 @@ const WorkoutDaySchema = new Schema<IWorkoutDay>({
         validate: [(val: IExercise[]) => val.length <= 10, 'Máximo de 10 exercicios por dia.']
     },
     completionPhotoProof: { type: String },
+    failureReason: { type: String },
 });
 
 const WorkoutPlanSchema = new Schema<IWorkoutPlan>(

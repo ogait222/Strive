@@ -41,6 +41,8 @@ export default function MyStudents() {
     const [students, setStudents] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
+    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
     // Modal State
     const [showModal, setShowModal] = useState(false);
@@ -239,6 +241,29 @@ export default function MyStudents() {
 
     if (loading) return <div className="loading">Carregando...</div>;
 
+    const normalize = (value: string) =>
+        value
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+
+    const trimmedSearch = searchTerm.trim();
+    const filteredStudents = trimmedSearch
+        ? students.filter((student) => {
+            const query = normalize(trimmedSearch);
+            return [student.name, student.username, student.email].some((field) =>
+                normalize(field).includes(query)
+            );
+        })
+        : students;
+
+    const visibleStudents = [...filteredStudents].sort((a, b) => {
+        const nameCompare = a.name.localeCompare(b.name, "pt-PT", { sensitivity: "base" });
+        if (nameCompare !== 0) return sortOrder === "asc" ? nameCompare : -nameCompare;
+        const userCompare = a.username.localeCompare(b.username, "pt-PT", { sensitivity: "base" });
+        return sortOrder === "asc" ? userCompare : -userCompare;
+    });
+
     return (
         <div className="my-students-container">
             <NavBar />
@@ -250,26 +275,55 @@ export default function MyStudents() {
                 ) : students.length === 0 ? (
                     <p>Ainda não tens clientes associados.</p>
                 ) : (
-                    <div className="students-grid">
-                    {students.map(student => (
-                        <div key={student._id} className="student-card">
-                            <div className="student-info">
-                                <h3>{student.name}</h3>
-                                <p>@{student.username}</p>
-                                <p>{student.email}</p>
+                    <>
+                        <div className="students-toolbar">
+                            <div className="search-field">
+                                <label htmlFor="student-search">Pesquisar</label>
+                                <input
+                                    id="student-search"
+                                    type="search"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="Nome, username ou email"
+                                />
                             </div>
-                            <div className="student-actions">
-                                <button className="btn-create-plan" onClick={() => handleOpenModal(student)}>
-                                    Criar Plano de Treino
-                                </button>
-                                <button className="btn-view-plans" onClick={() => handleViewStudentPlans(student)}>
-                                    Ver treinos
-                                </button>
+                            <div className="sort-field">
+                                <label htmlFor="student-sort">Ordenar</label>
+                                <select
+                                    id="student-sort"
+                                    value={sortOrder}
+                                    onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+                                >
+                                    <option value="asc">Nome (A-Z)</option>
+                                    <option value="desc">Nome (Z-A)</option>
+                                </select>
                             </div>
                         </div>
-                    ))}
-                </div>
-            )}
+                        {visibleStudents.length === 0 ? (
+                            <p>Nenhum aluno encontrado.</p>
+                        ) : (
+                            <div className="students-grid">
+                                {visibleStudents.map(student => (
+                                    <div key={student._id} className="student-card">
+                                        <div className="student-info">
+                                            <h3>{student.name}</h3>
+                                            <p>@{student.username}</p>
+                                            <p>{student.email}</p>
+                                        </div>
+                                        <div className="student-actions">
+                                            <button className="btn-create-plan" onClick={() => handleOpenModal(student)}>
+                                                Criar Plano de Treino
+                                            </button>
+                                            <button className="btn-view-plans" onClick={() => handleViewStudentPlans(student)}>
+                                                Ver treinos
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </>
+                )}
 
                 {viewStudent && (
                     <div className="student-plans-panel">

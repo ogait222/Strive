@@ -5,6 +5,8 @@ import {
   getMessages,
   getUserChats,
   markMessagesAsRead,
+  archiveChat,
+  unarchiveChat,
 } from "../controllers/chatController";
 import { verifyToken } from "../middlewares/authMiddleware";
 
@@ -238,5 +240,47 @@ router.get("/user/:userId", getUserChats);
 // I need to import verifyToken.
 
 router.put("/:chatId/read", verifyToken, markMessagesAsRead);
+
+/**
+ * @swagger
+ * /chats/{chatId}/archive:
+ *   put:
+ *     summary: Arquivar um chat para o utilizador autenticado
+ *     tags: [Chat]
+ *     parameters:
+ *       - in: path
+ *         name: chatId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID do chat
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Chat arquivado
+ */
+router.put("/:chatId/archive", verifyToken, archiveChat);
+
+/**
+ * @swagger
+ * /chats/{chatId}/unarchive:
+ *   put:
+ *     summary: Desarquivar um chat para o utilizador autenticado
+ *     tags: [Chat]
+ *     parameters:
+ *       - in: path
+ *         name: chatId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID do chat
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Chat desarquivado
+ */
+router.put("/:chatId/unarchive", verifyToken, unarchiveChat);
 
 export default router;

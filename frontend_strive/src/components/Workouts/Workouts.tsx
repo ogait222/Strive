@@ -17,6 +17,7 @@ interface WorkoutDay {
   status?: 'pending' | 'completed' | 'failed';
   exercises: Exercise[];
   completionPhotoProof?: string; //ainda não implementado
+  failureReason?: string;
   calendarDate?: string;
 }
 
@@ -45,6 +46,9 @@ export default function Workouts() {
   const [photoModalData, setPhotoModalData] = useState<{ planId: string; dayId: string; dayLabel: string } | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoError, setPhotoError] = useState("");
+  const [failModalData, setFailModalData] = useState<{ planId: string; dayId: string; dayLabel: string } | null>(null);
+  const [failReason, setFailReason] = useState("");
+  const [failError, setFailError] = useState("");
 
   const fetchWorkoutPlans = async () => {
     try {
@@ -78,14 +82,28 @@ export default function Workouts() {
     fetchWorkoutPlans();
   }, []);
 
-  const handleStatusUpdate = async (planId: string, dayId: string, status: string, completionPhotoProof?: string) => {
+  const handleStatusUpdate = async (
+    planId: string,
+    dayId: string,
+    status: string,
+    completionPhotoProof?: string,
+    failureReason?: string
+  ) => {
     try {
       setUpdating(dayId);
       const token = localStorage.getItem("token");
 
+      const payload: { status: string; completionPhotoProof?: string; failureReason?: string } = { status };
+      if (completionPhotoProof) {
+        payload.completionPhotoProof = completionPhotoProof;
+      }
+      if (failureReason) {
+        payload.failureReason = failureReason;
+      }
+
       await axios.patch(
         `http://localhost:3500/workouts/${planId}/day/${dayId}/status`,
-        { status, completionPhotoProof },
+        payload,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -95,8 +113,10 @@ export default function Workouts() {
 
       // Refresh plans to update UI and move to history if needed
       await fetchWorkoutPlans();
+      return true;
     } catch (err) {
       console.error("Erro ao atualizar status", err);
+      return false;
     } finally {
       setUpdating(null);
     }
@@ -110,14 +130,18 @@ export default function Workouts() {
 
   const handleCompleteClick = (planId: string, dayId: string, dayLabel: string, status?: WorkoutDay["status"]) => {
     if (status && status !== "pending") return;
+    setFailModalData(null);
     setPhotoModalData({ planId, dayId, dayLabel });
     setPhotoFile(null);
     setPhotoError("");
   };
 
-  const handleFailClick = (planId: string, dayId: string, status?: WorkoutDay["status"]) => {
+  const handleFailClick = (planId: string, dayId: string, dayLabel: string, status?: WorkoutDay["status"]) => {
     if (status && status !== "pending") return;
-    handleStatusUpdate(planId, dayId, "failed");
+    setPhotoModalData(null);
+    setFailModalData({ planId, dayId, dayLabel });
+    setFailReason("");
+    setFailError("");
   };
 
   const handlePhotoSubmit = async () => {
@@ -138,11 +162,33 @@ export default function Workouts() {
         });
 
       const photoString = await toBase64(photoFile);
-      await handleStatusUpdate(photoModalData.planId, photoModalData.dayId, "completed", photoString);
-      setPhotoModalData(null);
-      setPhotoFile(null);
+      const success = await handleStatusUpdate(photoModalData.planId, photoModalData.dayId, "completed", photoString);
+      if (success) {
+        setPhotoModalData(null);
+        setPhotoFile(null);
+      } else {
+        setPhotoError("Erro ao enviar a foto. Tenta novamente.");
+      }
     } catch (err) {
       setPhotoError("Erro ao enviar a foto. Tenta novamente.");
+    }
+  };
+
+  const handleFailSubmit = async () => {
+    if (!failModalData) return;
+    const trimmedReason = failReason.trim();
+    if (!trimmedReason) {
+      setFailError("Indica o motivo para concluir a falha.");
+      return;
+    }
+
+    const success = await handleStatusUpdate(failModalData.planId, failModalData.dayId, "failed", undefined, trimmedReason);
+    if (success) {
+      setFailModalData(null);
+      setFailReason("");
+      setFailError("");
+    } else {
+      setFailError("Erro ao registar a falha. Tenta novamente.");
     }
   };
 
@@ -283,7 +329,7 @@ export default function Workouts() {
                               </button>
                               <button
                                 className={`status-btn fail ${dayData.status === 'failed' ? 'selected' : ''}`}
-                                onClick={() => handleFailClick(plan._id, dayData._id || '', dayData.status)}
+                                onClick={() => handleFailClick(plan._id, dayData._id || '', dayData.day, dayData.status)}
                                 disabled={!!updating || (dayData.status && dayData.status !== 'pending')}
                               >
                                 ✕
@@ -365,6 +411,34 @@ export default function Workouts() {
               </button>
               <button className="primary-btn" onClick={handlePhotoSubmit} disabled={!!updating}>
                 Enviar e concluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {failModalData && (
+        <div className="photo-modal-backdrop">
+          <div className="photo-modal">
+            <h3>Falhar treino - {failModalData.dayLabel}</h3>
+            <p>Indica o motivo para concluir esta ação.</p>
+            <textarea
+              className="reason-textarea"
+              value={failReason}
+              onChange={(e) => {
+                setFailReason(e.target.value);
+                if (failError) setFailError("");
+              }}
+              placeholder="Escreve o motivo..."
+              rows={4}
+              disabled={!!updating}
+            />
+            {failError && <div className="photo-error">{failError}</div>}
+            <div className="modal-actions">
+              <button className="secondary-btn" onClick={() => setFailModalData(null)} disabled={!!updating}>
+                Cancelar
+              </button>
+              <button className="primary-btn" onClick={handleFailSubmit} disabled={!!updating}>
+                Confirmar falta
               </button>
             </div>
           </div>

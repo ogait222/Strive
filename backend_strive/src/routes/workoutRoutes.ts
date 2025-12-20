@@ -218,6 +218,12 @@ router.patch(
  *               status:
  *                 type: string
  *                 enum: [pending, completed, failed]
+ *               completionPhotoProof:
+ *                 type: string
+ *                 description: Prova fotográfica (obrigatória quando status=completed)
+ *               failureReason:
+ *                 type: string
+ *                 description: Motivo da falha (obrigatório quando status=failed)
  *     responses:
  *       200:
  *         description: Status atualizado

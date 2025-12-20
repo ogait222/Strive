@@ -26,6 +26,7 @@ interface IChat {
     lastMessage?: IMessage;
     updatedAt: string;
     unreadCount?: number;
+    archivedBy?: string[];
 }
 
 const Chat: React.FC = () => {
@@ -38,6 +39,7 @@ const Chat: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<IUser[]>([]);
     const [showSearch, setShowSearch] = useState(false);
+    const [showArchived, setShowArchived] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
 
@@ -141,6 +143,61 @@ const Chat: React.FC = () => {
             ));
         } catch (error) {
             console.error("Error marking chat as read:", error);
+        }
+    };
+
+    const handleArchiveChat = async (chatId: string) => {
+        try {
+            const token = localStorage.getItem("token");
+            await axios.put(
+                `http://localhost:3500/chats/${chatId}/archive`,
+                {},
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+            const currentUserId = currentUser?._id;
+            if (!currentUserId) return;
+            setChats((prev) =>
+                prev.map((chat) => {
+                    if (chat._id !== chatId) return chat;
+                    const archivedBy = chat.archivedBy ? [...chat.archivedBy] : [];
+                    if (!archivedBy.includes(currentUserId)) {
+                        archivedBy.push(currentUserId);
+                    }
+                    return { ...chat, archivedBy };
+                })
+            );
+            if (activeChat?._id === chatId) {
+                setActiveChat(null);
+                setMessages([]);
+            }
+        } catch (error) {
+            console.error("Error archiving chat:", error);
+        }
+    };
+
+    const handleUnarchiveChat = async (chatId: string) => {
+        try {
+            const token = localStorage.getItem("token");
+            await axios.put(
+                `http://localhost:3500/chats/${chatId}/unarchive`,
+                {},
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+            const currentUserId = currentUser?._id;
+            if (!currentUserId) return;
+            setChats((prev) =>
+                prev.map((chat) => {
+                    if (chat._id !== chatId) return chat;
+                    const archivedBy = (chat.archivedBy || []).filter((id) => id !== currentUserId);
+                    return { ...chat, archivedBy };
+                })
+            );
+        } catch (error) {
+            console.error("Error unarchiving chat:", error);
         }
     };
 
@@ -251,6 +308,12 @@ const Chat: React.FC = () => {
         return chat.participants.find((p) => p._id !== currentUser?._id);
     };
 
+    const isChatArchived = (chat: IChat) => {
+        const currentUserId = currentUser?._id;
+        if (!currentUserId) return false;
+        return chat.archivedBy?.includes(currentUserId) || false;
+    };
+
     // Organize chats: Trainer first, then others
     const sortedChats = [...chats].sort((a, b) => {
         const userA = getOtherParticipant(a);
@@ -263,6 +326,73 @@ const Chat: React.FC = () => {
         // Default sort by date
         return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     });
+
+    const activeChats = sortedChats.filter((chat) => !isChatArchived(chat));
+    const archivedChats = sortedChats.filter((chat) => isChatArchived(chat));
+
+    const renderChatItem = (chat: IChat, archived: boolean) => {
+        const otherUser = getOtherParticipant(chat);
+        if (!otherUser) return null;
+
+        return (
+            <div
+                key={chat._id}
+                className={`chat-item ${activeChat?._id === chat._id ? "active" : ""}`}
+                onClick={() => selectChat(chat)}
+            >
+                <div className={`avatar ${otherUser.role === 'trainer' ? 'trainer' : ''}`}>
+                    {otherUser.name.charAt(0).toUpperCase()}
+                    {chat.unreadCount && chat.unreadCount > 0 ? (
+                        <div className="unread-badge">{chat.unreadCount}</div>
+                    ) : null}
+                </div>
+                <div className="chat-info">
+                    <div className="chat-name">
+                        {otherUser.name}
+                        {otherUser.role === 'trainer' && <span style={{ fontSize: '0.8em', color: '#ff8c00', marginLeft: 6 }}>★ Treinador</span>}
+                    </div>
+                    {chat.lastMessage && (
+                        <div className="chat-last-message">
+                            {chat.lastMessage.sender === currentUser?._id && "Tu: "}
+                            {chat.lastMessage.content}
+                        </div>
+                    )}
+                </div>
+                <div className="chat-item-actions">
+                    <button
+                        type="button"
+                        className="archive-btn"
+                        aria-label={archived ? "Desarquivar conversa" : "Arquivar conversa"}
+                        title={archived ? "Desarquivar conversa" : "Arquivar conversa"}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (archived) {
+                                handleUnarchiveChat(chat._id);
+                            } else {
+                                handleArchiveChat(chat._id);
+                            }
+                        }}
+                    >
+                        {archived ? (
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path
+                                    d="M6 7V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1h1a1 1 0 0 1 1 1v3a2 2 0 0 1-2 2h-1v5a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-5H5a2 2 0 0 1-2-2V8a1 1 0 0 1 1-1h2zm2-1h8v1H8V6zm-2 7v5h12v-5H6zm6-1 3-3h-2V7h-2v2H9l3 3z"
+                                    fill="currentColor"
+                                />
+                            </svg>
+                        ) : (
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path
+                                    d="M6 7V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1h1a1 1 0 0 1 1 1v3a2 2 0 0 1-2 2h-1v5a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-5H5a2 2 0 0 1-2-2V8a1 1 0 0 1 1-1h2zm2-1h8v1H8V6zm-2 7v5h12v-5H6zm6-5 3 3h-2v2h-2v-2H9l3-3z"
+                                    fill="currentColor"
+                                />
+                            </svg>
+                        )}
+                    </button>
+                </div>
+            </div>
+        );
+    };
 
     return (
         <div className="dashboard-container">
@@ -308,37 +438,32 @@ const Chat: React.FC = () => {
                     )}
 
                     <div className="chat-list">
-                        {sortedChats.map((chat) => {
-                            const otherUser = getOtherParticipant(chat);
-                            if (!otherUser) return null;
-
-                            return (
-                                <div
-                                    key={chat._id}
-                                    className={`chat-item ${activeChat?._id === chat._id ? "active" : ""}`}
-                                    onClick={() => selectChat(chat)}
-                                >
-                                    <div className={`avatar ${otherUser.role === 'trainer' ? 'trainer' : ''}`}>
-                                        {otherUser.name.charAt(0).toUpperCase()}
-                                        {chat.unreadCount && chat.unreadCount > 0 ? (
-                                            <div className="unread-badge">{chat.unreadCount}</div>
-                                        ) : null}
-                                    </div>
-                                    <div className="chat-info">
-                                        <div className="chat-name">
-                                            {otherUser.name}
-                                            {otherUser.role === 'trainer' && <span style={{ fontSize: '0.8em', color: '#ff8c00', marginLeft: 6 }}>★ Treinador</span>}
-                                        </div>
-                                        {chat.lastMessage && (
-                                            <div className="chat-last-message">
-                                                {chat.lastMessage.sender === currentUser?._id && "Tu: "}
-                                                {chat.lastMessage.content}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
+                        <div className="chat-list-section">
+                            <div className="section-title">Conversas</div>
+                            {activeChats.length === 0 ? (
+                                <div className="chat-empty">Sem conversas ativas.</div>
+                            ) : (
+                                activeChats.map((chat) => renderChatItem(chat, false))
+                            )}
+                        </div>
+                        <div className="chat-list-section">
+                            <button
+                                type="button"
+                                className="archive-toggle"
+                                onClick={() => setShowArchived((prev) => !prev)}
+                            >
+                                {showArchived
+                                    ? "Ocultar arquivadas"
+                                    : `Arquivadas${archivedChats.length ? ` (${archivedChats.length})` : ""}`}
+                            </button>
+                            {showArchived && (
+                                archivedChats.length === 0 ? (
+                                    <div className="chat-empty">Sem conversas arquivadas.</div>
+                                ) : (
+                                    archivedChats.map((chat) => renderChatItem(chat, true))
+                                )
+                            )}
+                        </div>
                     </div>
                 </div>
 
