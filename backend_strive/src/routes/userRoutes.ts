@@ -1,5 +1,14 @@
 import { Router } from "express";
-import { getTrainers, selectTrainer, getMe, getStudents, searchUsers, updateAvatar } from "../controllers/userController";
+import {
+  getTrainers,
+  selectTrainer,
+  getMe,
+  getStudents,
+  searchUsers,
+  updateAvatar,
+  getUsers,
+  updateTrainerApplicationStatus,
+} from "../controllers/userController";
 import { verifyToken, authorizeRoles } from "../middlewares/authMiddleware";
 
 const router = Router();
@@ -97,6 +106,8 @@ router.get("/students", verifyToken, authorizeRoles("trainer"), getStudents);
  */
 router.get("/search", verifyToken, searchUsers);
 router.put("/me/avatar", verifyToken, updateAvatar);
+router.get("/", verifyToken, authorizeRoles("admin"), getUsers);
+router.put("/:id/trainer-application", verifyToken, authorizeRoles("admin"), updateTrainerApplicationStatus);
 
 
 export default router;

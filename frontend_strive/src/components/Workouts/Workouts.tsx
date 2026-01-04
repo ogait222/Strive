@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import NavBar from "../NavBar/NavBar";
 import "./Workouts.css";
@@ -37,7 +38,13 @@ interface WorkoutPlan {
   createdAt: string;
 }
 
+const normalizeDateKey = (value?: string) => {
+  if (!value) return "";
+  return value.split("T")[0];
+};
+
 export default function Workouts() {
+  const location = useLocation();
   const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
   const [activeTab, setActiveTab] = useState<'active' | 'history' | 'archived'>('active');
   const [loading, setLoading] = useState(true);
@@ -49,6 +56,13 @@ export default function Workouts() {
   const [failModalData, setFailModalData] = useState<{ planId: string; dayId: string; dayLabel: string } | null>(null);
   const [failReason, setFailReason] = useState("");
   const [failError, setFailError] = useState("");
+  const [calendarSyncApplied, setCalendarSyncApplied] = useState(false);
+  const selectedDayRef = useRef<HTMLDivElement | null>(null);
+
+  const selectedDateKey = useMemo(() => {
+    const raw = new URLSearchParams(location.search).get("date") || "";
+    return normalizeDateKey(raw);
+  }, [location.search]);
 
   const fetchWorkoutPlans = async () => {
     try {
@@ -81,6 +95,11 @@ export default function Workouts() {
   useEffect(() => {
     fetchWorkoutPlans();
   }, []);
+
+  useEffect(() => {
+    selectedDayRef.current = null;
+    setCalendarSyncApplied(false);
+  }, [selectedDateKey]);
 
   const handleStatusUpdate = async (
     planId: string,
@@ -209,20 +228,59 @@ export default function Workouts() {
   const plansPerPage = 4;
   const [page, setPage] = useState(1);
 
-  const filteredPlans = workoutPlans.filter(plan =>
-    activeTab === 'active'
-      ? plan.active !== false && !plan.archived
-      : activeTab === 'archived'
-      ? plan.archived === true
-      : plan.active === false && !plan.archived
-  );
+  const plansByTab = useMemo(() => ({
+    active: workoutPlans.filter(plan => plan.active !== false && !plan.archived),
+    history: workoutPlans.filter(plan => plan.active === false && !plan.archived),
+    archived: workoutPlans.filter(plan => plan.archived === true),
+  }), [workoutPlans]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [activeTab]);
+  const filteredPlans = plansByTab[activeTab];
 
   const totalPages = Math.max(1, Math.ceil(filteredPlans.length / plansPerPage));
   const paginatedPlans = filteredPlans.slice((page - 1) * plansPerPage, page * plansPerPage);
+
+  useEffect(() => {
+    if (!selectedDateKey || calendarSyncApplied || workoutPlans.length === 0) return;
+
+    const planMatch = workoutPlans.find(plan =>
+      plan.days?.some(day => normalizeDateKey(day.calendarDate) === selectedDateKey)
+    );
+
+    if (planMatch) {
+      const targetTab: 'active' | 'history' | 'archived' =
+        planMatch.archived === true ? 'archived' : planMatch.active === false ? 'history' : 'active';
+      if (targetTab !== activeTab) {
+        setActiveTab(targetTab);
+      }
+      const plansInTab = plansByTab[targetTab];
+      const planIndex = plansInTab.findIndex(plan => plan._id === planMatch._id);
+      if (planIndex >= 0) {
+        const desiredPage = Math.floor(planIndex / plansPerPage) + 1;
+        if (desiredPage !== page) {
+          setPage(desiredPage);
+        }
+      }
+    }
+
+    setCalendarSyncApplied(true);
+  }, [
+    activeTab,
+    calendarSyncApplied,
+    page,
+    plansByTab,
+    plansPerPage,
+    selectedDateKey,
+    workoutPlans,
+  ]);
+
+  useEffect(() => {
+    if (!selectedDateKey) return;
+    const target = selectedDayRef.current;
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [activeTab, page, selectedDateKey]);
+
+  let selectedAssigned = false;
 
   if (loading) {
     return (
@@ -255,19 +313,28 @@ export default function Workouts() {
         <div className="tabs-container">
           <button
             className={`tab-button ${activeTab === 'active' ? 'active' : ''}`}
-            onClick={() => setActiveTab('active')}
+            onClick={() => {
+              setActiveTab('active');
+              setPage(1);
+            }}
           >
             Ativos
           </button>
           <button
             className={`tab-button ${activeTab === 'history' ? 'active' : ''}`}
-            onClick={() => setActiveTab('history')}
+            onClick={() => {
+              setActiveTab('history');
+              setPage(1);
+            }}
           >
             Histórico
           </button>
           <button
             className={`tab-button ${activeTab === 'archived' ? 'active' : ''}`}
-            onClick={() => setActiveTab('archived')}
+            onClick={() => {
+              setActiveTab('archived');
+              setPage(1);
+            }}
           >
             Arquivados
           </button>
@@ -312,60 +379,73 @@ export default function Workouts() {
 
                 <div className="week-schedule">
                   {plan.days && plan.days.length > 0 ? (
-                    plan.days.map((dayData, index) => (
-                      <div key={index} className={`day-card ${dayData.status || 'pending'}`}>
-                        <div className="day-header">
-                          <div className="day-title">
-                            <h3>{dayData.day}</h3>
-                          </div>
-                          {activeTab === 'active' && (
-                            <div className="status-actions">
-                              <button
-                                className={`status-btn complete ${dayData.status === 'completed' ? 'selected' : ''}`}
-                                onClick={() => handleCompleteClick(plan._id, dayData._id || '', dayData.day, dayData.status)}
-                                disabled={!!updating || (dayData.status && dayData.status !== 'pending')}
-                              >
-                                ✓
-                              </button>
-                              <button
-                                className={`status-btn fail ${dayData.status === 'failed' ? 'selected' : ''}`}
-                                onClick={() => handleFailClick(plan._id, dayData._id || '', dayData.day, dayData.status)}
-                                disabled={!!updating || (dayData.status && dayData.status !== 'pending')}
-                              >
-                                ✕
-                              </button>
+                    plan.days.map((dayData, index) => {
+                      const dayDateKey = normalizeDateKey(dayData.calendarDate);
+                      const isSelected = !!selectedDateKey && dayDateKey === selectedDateKey;
+                      const attachRef = isSelected && !selectedAssigned;
+                      if (attachRef) {
+                        selectedAssigned = true;
+                      }
+
+                      return (
+                        <div
+                          key={index}
+                          ref={attachRef ? selectedDayRef : undefined}
+                          className={`day-card ${dayData.status || 'pending'} ${isSelected ? 'selected' : ''}`}
+                        >
+                          <div className="day-header">
+                            <div className="day-title">
+                              <h3>{dayData.day}</h3>
                             </div>
+                            {activeTab === 'active' && (
+                              <div className="status-actions">
+                                <button
+                                  className={`status-btn complete ${dayData.status === 'completed' ? 'selected' : ''}`}
+                                  onClick={() => handleCompleteClick(plan._id, dayData._id || '', dayData.day, dayData.status)}
+                                  disabled={!!updating || (dayData.status && dayData.status !== 'pending')}
+                                >
+                                  ✓
+                                </button>
+                                <button
+                                  className={`status-btn fail ${dayData.status === 'failed' ? 'selected' : ''}`}
+                                  onClick={() => handleFailClick(plan._id, dayData._id || '', dayData.day, dayData.status)}
+                                  disabled={!!updating || (dayData.status && dayData.status !== 'pending')}
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            )}
+                            {activeTab === 'history' && (
+                              <span className={`status-badge ${dayData.status}`}>
+                                {dayData.status === 'completed' ? 'Concluído' : dayData.status === 'failed' ? 'Falhado' : 'Pendente'}
+                              </span>
+                            )}
+                          </div>
+
+                          {dayData.exercises.length === 0 ? (
+                            <p>Descanso</p>
+                          ) : (
+                            <ul>
+                              {dayData.exercises.map((exercise, idx) => (
+                                <li key={idx} className="exercise-item">
+                                  <strong>{exercise.name}</strong>
+                                  <p>Séries: {exercise.sets} | Repetições: {exercise.reps}</p>
+                                  {exercise.notes && <p>Notas: {exercise.notes}</p>}
+                                  {exercise.videoUrl && (
+                                    <a href={exercise.videoUrl} target="_blank" rel="noopener noreferrer">
+                                      Ver vídeo
+                                    </a>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
                           )}
-                          {activeTab === 'history' && (
-                            <span className={`status-badge ${dayData.status}`}>
-                              {dayData.status === 'completed' ? 'Concluído' : dayData.status === 'failed' ? 'Falhado' : 'Pendente'}
-                            </span>
+                          {dayData.completionPhotoProof && (
+                            <div className="photo-proof-tag">Prova fotográfica enviada</div>
                           )}
                         </div>
-
-                        {dayData.exercises.length === 0 ? (
-                          <p>Descanso</p>
-                        ) : (
-                          <ul>
-                            {dayData.exercises.map((exercise, idx) => (
-                              <li key={idx} className="exercise-item">
-                                <strong>{exercise.name}</strong>
-                                <p>Séries: {exercise.sets} | Repetições: {exercise.reps}</p>
-                                {exercise.notes && <p>Notas: {exercise.notes}</p>}
-                                {exercise.videoUrl && (
-                                  <a href={exercise.videoUrl} target="_blank" rel="noopener noreferrer">
-                                    Ver vídeo
-                                  </a>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        {dayData.completionPhotoProof && (
-                          <div className="photo-proof-tag">Prova fotográfica enviada</div>
-                        )}
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <p>Sem horário definido.</p>
                   )}

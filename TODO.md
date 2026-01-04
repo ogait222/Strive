@@ -1,11 +1,11 @@
-- Calendário sincronizado com workout quando se clica no dia que tem treino
+- Calendário sincronizado com workout quando se clica no dia que tem treino. CONCLUIDO
 - Fix dashboard de cliente foto perfil do treinador
 - Home page , login , register css
 - Melhorar css dos botões (focus)
 - Notificações toast e possibilidade do PT mandar aviso a cliente por falhar treino
 - Fix Dark mode 
 - Aperfeiçoar página de perfil
-- Guardar planos de treinos já passados , para se o PT quiser passar os mesmos exercicios novamente
+- Guardar planos de treinos já passados , para se o PT quiser passar os mesmos exercicios novamente.  CONCLUIDO
 - Fix gráficos de dashboard
 - Arquivar conversas no chat. CONCLUIDO 
 - Mecanismo sort e de pesquisa no componente My Students.  CONCLUIDO

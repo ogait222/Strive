@@ -15,6 +15,11 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
     password: "",
     confirmPassword: "",
   });
+  const [applyForTrainer, setApplyForTrainer] = useState(false);
+  const [trainerFullName, setTrainerFullName] = useState("");
+  const [trainerBirthDate, setTrainerBirthDate] = useState("");
+  const [trainerCertificate, setTrainerCertificate] = useState<File | null>(null);
+  const [trainerIdDocument, setTrainerIdDocument] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -43,6 +48,14 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
   const validatePassword = (password: string) => {
     return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/.test(password);
   };
+
+  const toBase64 = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,17 +86,34 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
       return;
     }
 
+    if (applyForTrainer) {
+      if (!trainerFullName || !trainerBirthDate || !trainerCertificate || !trainerIdDocument) {
+        setError("Preenche todos os dados para a candidatura a PT.");
+        return;
+      }
+    }
+
     setError("");
     setLoading(true);
 
     try {
-      await axios.post("http://localhost:3500/auth/register", {
+      const payload: Record<string, any> = {
         name: formData.name,
         username: formData.username,
         email: formData.email,
         password: formData.password,
         role: "client",
-      });
+      };
+
+      if (applyForTrainer) {
+        payload.applyForTrainer = true;
+        payload.fullName = trainerFullName;
+        payload.birthDate = trainerBirthDate;
+        payload.certificateFile = await toBase64(trainerCertificate as File);
+        payload.idDocumentFile = await toBase64(trainerIdDocument as File);
+      }
+
+      await axios.post("http://localhost:3500/auth/register", payload);
 
       setSuccess("Conta criada com sucesso! Redirecionando para login...");
       setFormData({
@@ -93,6 +123,11 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
         password: "",
         confirmPassword: "",
       });
+      setApplyForTrainer(false);
+      setTrainerFullName("");
+      setTrainerBirthDate("");
+      setTrainerCertificate(null);
+      setTrainerIdDocument(null);
 
       setTimeout(() => {
         onSwitchToLogin();
@@ -174,6 +209,72 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
               placeholder="••••••••"
             />
           </div>
+
+          <div className="trainer-apply">
+            <label className="trainer-toggle">
+              <input
+                type="checkbox"
+                checked={applyForTrainer}
+                onChange={(e) => {
+                  setApplyForTrainer(e.target.checked);
+                  if (!e.target.checked) {
+                    setTrainerFullName("");
+                    setTrainerBirthDate("");
+                    setTrainerCertificate(null);
+                    setTrainerIdDocument(null);
+                  }
+                }}
+              />
+              Quero candidatar-me a Personal Trainer
+            </label>
+            <p className="trainer-hint">
+              Envia os teus dados para validação do administrador.
+            </p>
+          </div>
+
+          {applyForTrainer && (
+            <div className="trainer-fields">
+              <div className="form-group">
+                <label htmlFor="trainerFullName">Nome completo</label>
+                <input
+                  type="text"
+                  id="trainerFullName"
+                  value={trainerFullName}
+                  onChange={(e) => setTrainerFullName(e.target.value)}
+                  placeholder="Nome completo"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="trainerBirthDate">Data de nascimento</label>
+                <input
+                  type="date"
+                  id="trainerBirthDate"
+                  value={trainerBirthDate}
+                  onChange={(e) => setTrainerBirthDate(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="trainerCertificate">Certificado Profissional</label>
+                <input
+                  type="file"
+                  id="trainerCertificate"
+                  name="trainerCertificate"
+                  accept="image/*,application/pdf"
+                  onChange={(e) => setTrainerCertificate(e.target.files?.[0] || null)}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="trainerIdDocument">Documento de identificação</label>
+                <input
+                  type="file"
+                  id="trainerIdDocument"
+                  name="trainerIdDocument"
+                  accept="image/*,application/pdf"
+                  onChange={(e) => setTrainerIdDocument(e.target.files?.[0] || null)}
+                />
+              </div>
+            </div>
+          )}
 
           {error && <div className="error-message">{error}</div>}
           {success && <div className="success-message">{success}</div>}

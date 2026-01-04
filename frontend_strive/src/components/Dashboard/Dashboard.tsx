@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
+import type { KeyboardEvent } from "react";
 import axios from "axios";
 import NavBar from "../NavBar/NavBar";
 import "./Dashboard.css";
@@ -31,6 +32,12 @@ interface WorkoutDay {
 interface WorkoutPlan {
   title?: string;
   days: WorkoutDay[];
+}
+
+interface CalendarCell {
+  label: string;
+  workouts?: WorkoutDay[];
+  dateKey?: string;
 }
 
 type Student = UserProfile;
@@ -168,7 +175,7 @@ export default function Dashboard() {
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    const cells: { label: string; workouts?: WorkoutDay[] }[] = [];
+    const cells: CalendarCell[] = [];
     for (let i = 0; i < (firstDay === 0 ? 6 : firstDay - 1); i++) {
       cells.push({ label: "" });
     }
@@ -184,15 +191,34 @@ export default function Dashboard() {
     });
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const dateObj = new Date(year, month, day);
-      const key = dateObj.toISOString().split("T")[0];
-      cells.push({ label: String(day), workouts: map[key] });
+      const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      cells.push({ label: String(day), workouts: map[key], dateKey: key });
     }
 
     return {
       monthLabel: today.toLocaleDateString("pt-PT", { month: "long", year: "numeric" }),
       cells,
     };
+  };
+
+  const formatCalendarLabel = (dateKey?: string) => {
+    if (!dateKey) return "";
+    const date = new Date(`${dateKey}T00:00:00`);
+    if (isNaN(date.getTime())) return dateKey;
+    return date.toLocaleDateString("pt-PT", { weekday: "long", day: "2-digit", month: "long" });
+  };
+
+  const handleCalendarDayClick = (cell: CalendarCell) => {
+    if (!cell.dateKey || !cell.workouts?.length) return;
+    navigate(`/workouts?date=${cell.dateKey}`);
+  };
+
+  const handleCalendarKeyDown = (event: KeyboardEvent<HTMLDivElement>, cell: CalendarCell) => {
+    if (!cell.dateKey || !cell.workouts?.length) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleCalendarDayClick(cell);
+    }
   };
 
   useEffect(() => {
@@ -408,7 +434,15 @@ export default function Dashboard() {
                   </div>
                 ))}
                 {calendarData.cells.map((cell, idx) => (
-                  <div key={idx} className={`calendar-day ${cell.workouts?.length ? "has-workout" : ""}`}>
+                  <div
+                    key={idx}
+                    className={`calendar-day ${cell.workouts?.length ? "has-workout clickable" : ""}`}
+                    role={cell.workouts?.length ? "button" : undefined}
+                    tabIndex={cell.workouts?.length ? 0 : -1}
+                    aria-label={cell.workouts?.length ? `Treinos em ${formatCalendarLabel(cell.dateKey)}` : undefined}
+                    onClick={cell.workouts?.length ? () => handleCalendarDayClick(cell) : undefined}
+                    onKeyDown={cell.workouts?.length ? (event) => handleCalendarKeyDown(event, cell) : undefined}
+                  >
                     <span className="day-number">{cell.label}</span>
                     <div className="day-tags">
                       {cell.workouts?.map((w, i) => (

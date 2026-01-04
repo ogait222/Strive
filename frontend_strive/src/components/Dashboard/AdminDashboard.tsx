@@ -25,15 +25,49 @@ interface TrainerChangeRequest {
     createdAt: string;
 }
 
+interface TrainerApplication {
+    status: "none" | "pending" | "approved" | "rejected";
+    fullName?: string;
+    birthDate?: string;
+    certificateFile?: string;
+    idDocumentFile?: string;
+    submittedAt?: string;
+}
+
+interface AdminUser {
+    _id: string;
+    name: string;
+    username: string;
+    email: string;
+    role: "client" | "trainer" | "admin";
+    createdAt: string;
+    trainerApplication?: TrainerApplication;
+}
+
+interface DocumentPreview {
+    title: string;
+    url: string;
+    type: "image" | "pdf" | "file";
+}
+
 export default function AdminDashboard() {
     const [requests, setRequests] = useState<TrainerChangeRequest[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const [requestsLoading, setRequestsLoading] = useState(true);
+    const [requestsError, setRequestsError] = useState('');
     const [totalUnread, setTotalUnread] = useState(0);
+    const [users, setUsers] = useState<AdminUser[]>([]);
+    const [usersLoading, setUsersLoading] = useState(true);
+    const [usersError, setUsersError] = useState('');
+    const [applications, setApplications] = useState<AdminUser[]>([]);
+    const [applicationsLoading, setApplicationsLoading] = useState(true);
+    const [applicationsError, setApplicationsError] = useState('');
+    const [previewDoc, setPreviewDoc] = useState<DocumentPreview | null>(null);
 
     useEffect(() => {
         fetchRequests();
         fetchUnreadCount();
+        fetchUsers();
+        fetchTrainerApplications();
     }, []);
 
     const fetchUnreadCount = async () => {
@@ -65,10 +99,10 @@ export default function AdminDashboard() {
             });
             setRequests(response.data);
         } catch (err) {
-            setError('Erro ao carregar solicitações');
+            setRequestsError('Erro ao carregar solicitações');
             console.error(err);
         } finally {
-            setLoading(false);
+            setRequestsLoading(false);
         }
     };
 
@@ -90,8 +124,77 @@ export default function AdminDashboard() {
         }
     };
 
-    if (loading) return <div className="admin-dashboard">Carregando...</div>;
-    if (error) return <div className="admin-dashboard error">{error}</div>;
+    const fetchUsers = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get('http://localhost:3500/users', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setUsers(response.data);
+        } catch (err) {
+            setUsersError('Erro ao carregar utilizadores');
+            console.error(err);
+        } finally {
+            setUsersLoading(false);
+        }
+    };
+
+    const fetchTrainerApplications = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get('http://localhost:3500/users?applicationStatus=pending', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setApplications(response.data);
+        } catch (err) {
+            setApplicationsError('Erro ao carregar candidaturas de PT');
+            console.error(err);
+        } finally {
+            setApplicationsLoading(false);
+        }
+    };
+
+    const handleApplicationStatus = async (userId: string, status: "approved" | "rejected") => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.put(
+                `http://localhost:3500/users/${userId}/trainer-application`,
+                { status },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            setApplications((prev) => prev.filter((item) => item._id !== userId));
+            setUsers((prev) =>
+                prev.map((user) =>
+                    user._id === userId
+                        ? { ...user, role: response.data.role, trainerApplication: response.data.trainerApplication }
+                        : user
+                )
+            );
+        } catch (err) {
+            console.error('Erro ao atualizar candidatura:', err);
+            alert('Erro ao processar candidatura');
+        }
+    };
+
+    const formatDate = (value?: string) => {
+        if (!value) return "-";
+        const date = new Date(value);
+        if (isNaN(date.getTime())) return value;
+        return date.toLocaleDateString("pt-PT");
+    };
+
+    const getDocType = (url?: string) => {
+        if (!url) return "file";
+        if (url.includes("application/pdf")) return "pdf";
+        if (url.startsWith("data:image")) return "image";
+        return "file";
+    };
+
+    const openDocPreview = (title: string, url?: string) => {
+        if (!url) return;
+        setPreviewDoc({ title, url, type: getDocType(url) });
+    };
 
     return (
         <div className="dashboard-container">
@@ -134,9 +237,124 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="requests-section">
+                        <h2>Candidaturas a Personal Trainer</h2>
+                        {applicationsLoading ? (
+                            <div className="empty-state">A carregar candidaturas...</div>
+                        ) : applicationsError ? (
+                            <div className="empty-state">{applicationsError}</div>
+                        ) : applications.length === 0 ? (
+                            <div className="empty-state">
+                                <p>Não há candidaturas pendentes.</p>
+                            </div>
+                        ) : (
+                            <div className="applications-list">
+                                {applications.map((user) => (
+                                    <div key={user._id} className="application-card">
+                                        <div className="request-info">
+                                            <h3>{user.trainerApplication?.fullName || user.name}</h3>
+                                            <div className="request-details">
+                                                <div>
+                                                    <strong>Utilizador:</strong> @{user.username}
+                                                </div>
+                                                <div>
+                                                    <strong>Email:</strong> {user.email}
+                                                </div>
+                                                <div>
+                                                    <strong>Nascimento:</strong> {formatDate(user.trainerApplication?.birthDate)}
+                                                </div>
+                                                <div>
+                                                    <strong>Submetido:</strong> {formatDate(user.trainerApplication?.submittedAt || user.createdAt)}
+                                                </div>
+                                            </div>
+                                            <div className="application-docs">
+                                                {user.trainerApplication?.certificateFile ? (
+                                                    <button
+                                                        type="button"
+                                                        className="doc-link"
+                                                        onClick={() => openDocPreview("Certificado de PT", user.trainerApplication?.certificateFile)}
+                                                    >
+                                                        Ver certificado
+                                                    </button>
+                                                ) : (
+                                                    <span className="muted">Sem certificado</span>
+                                                )}
+                                                {user.trainerApplication?.idDocumentFile ? (
+                                                    <button
+                                                        type="button"
+                                                        className="doc-link"
+                                                        onClick={() => openDocPreview("Documento de identificação", user.trainerApplication?.idDocumentFile)}
+                                                    >
+                                                        Ver documento
+                                                    </button>
+                                                ) : (
+                                                    <span className="muted">Sem documento</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="request-actions">
+                                            <button
+                                                onClick={() => handleApplicationStatus(user._id, "approved")}
+                                                className="btn-accept"
+                                            >
+                                                Aprovar
+                                            </button>
+                                            <button
+                                                onClick={() => handleApplicationStatus(user._id, "rejected")}
+                                                className="btn-reject"
+                                            >
+                                                Rejeitar
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="requests-section">
+                        <h2>Utilizadores registados</h2>
+                        {usersLoading ? (
+                            <div className="empty-state">A carregar utilizadores...</div>
+                        ) : usersError ? (
+                            <div className="empty-state">{usersError}</div>
+                        ) : users.length === 0 ? (
+                            <div className="empty-state">
+                                <p>Sem utilizadores registados.</p>
+                            </div>
+                        ) : (
+                            <div className="users-table">
+                                <div className="users-row users-header">
+                                    <span>Nome</span>
+                                    <span>Username</span>
+                                    <span>Email</span>
+                                    <span>Role</span>
+                                    <span>Candidatura PT</span>
+                                </div>
+                                {users.map((user) => (
+                                    <div key={user._id} className="users-row">
+                                        <span>{user.name}</span>
+                                        <span>@{user.username}</span>
+                                        <span>{user.email}</span>
+                                        <span className={`role-pill ${user.role}`}>{user.role}</span>
+                                        <span>
+                                            {user.trainerApplication?.status && user.trainerApplication.status !== "none"
+                                                ? user.trainerApplication.status
+                                                : "-"}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="requests-section">
                         <h2>Solicitações de Troca de Treinador</h2>
 
-                        {requests.length === 0 ? (
+                        {requestsLoading ? (
+                            <div className="empty-state">A carregar solicitações...</div>
+                        ) : requestsError ? (
+                            <div className="empty-state">{requestsError}</div>
+                        ) : requests.length === 0 ? (
                             <div className="empty-state">
                                 <p>Não há solicitações pendentes no momento.</p>
                             </div>
@@ -181,6 +399,40 @@ export default function AdminDashboard() {
                     </div>
                 </div>
             </div>
+            {previewDoc && (
+                <div className="doc-modal-overlay" onClick={() => setPreviewDoc(null)}>
+                    <div className="doc-modal" onClick={(event) => event.stopPropagation()}>
+                        <div className="doc-modal-header">
+                            <h3>{previewDoc.title}</h3>
+                            <button type="button" className="doc-close" onClick={() => setPreviewDoc(null)}>
+                                ×
+                            </button>
+                        </div>
+                        <div className="doc-modal-body">
+                            {previewDoc.type === "image" && (
+                                <img src={previewDoc.url} alt={previewDoc.title} />
+                            )}
+                            {previewDoc.type === "pdf" && (
+                                <iframe title={previewDoc.title} src={previewDoc.url} />
+                            )}
+                            {previewDoc.type === "file" && (
+                                <a href={previewDoc.url} target="_blank" rel="noopener noreferrer">
+                                    Abrir documento
+                                </a>
+                            )}
+                        </div>
+                        <div className="doc-modal-footer">
+                            <a
+                                href={previewDoc.url}
+                                download
+                                className="doc-download"
+                            >
+                                Descarregar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

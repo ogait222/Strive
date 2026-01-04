@@ -37,6 +37,14 @@ interface WorkoutPlan {
     createdAt: string;
 }
 
+interface WorkoutTemplate {
+    _id: string;
+    title: string;
+    description?: string;
+    days: WorkoutDay[];
+    createdAt?: string;
+}
+
 export default function MyStudents() {
     const [students, setStudents] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
@@ -55,6 +63,11 @@ export default function MyStudents() {
     const [plansLoading, setPlansLoading] = useState(false);
     const [plansError, setPlansError] = useState("");
     const [selectedPlan, setSelectedPlan] = useState<WorkoutPlan | null>(null);
+    const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
+    const [templatesLoading, setTemplatesLoading] = useState(false);
+    const [templatesError, setTemplatesError] = useState("");
+    const [selectedTemplateId, setSelectedTemplateId] = useState("");
+    const [saveAsTemplate, setSaveAsTemplate] = useState(false);
 
     useEffect(() => {
         fetchStudents();
@@ -95,17 +108,10 @@ export default function MyStudents() {
         setPlanTitle("");
         setPlanDescription("");
         setPlanDays([{ day: "", calendarDate: "", exercises: [] }]);
+        setSelectedTemplateId("");
+        setSaveAsTemplate(false);
+        fetchTemplates();
         setShowModal(true);
-    };
-
-    const handleAddDay = () => {
-        setPlanDays([...planDays, { day: "", calendarDate: "", exercises: [] }]);
-    };
-
-    const handleRemoveDay = (index: number) => {
-        const newDays = [...planDays];
-        newDays.splice(index, 1);
-        setPlanDays(newDays);
     };
 
     const formatDayLabel = (dateStr: string) => {
@@ -201,6 +207,76 @@ export default function MyStudents() {
         }
     };
 
+    const fetchTemplates = async () => {
+        try {
+            setTemplatesLoading(true);
+            setTemplatesError("");
+            const token = localStorage.getItem("token");
+            if (!token) {
+                setTemplatesError("Não autenticado");
+                return;
+            }
+            const response = await axios.get("http://localhost:3500/workout-templates", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setTemplates(response.data);
+        } catch (err: any) {
+            setTemplatesError(err.response?.data?.message || "Erro ao carregar modelos");
+        } finally {
+            setTemplatesLoading(false);
+        }
+    };
+
+    const applyTemplate = (template: WorkoutTemplate) => {
+        const firstDay = template.days && template.days.length > 0
+            ? template.days[0]
+            : { day: "", exercises: [] };
+        setPlanTitle(template.title);
+        setPlanDescription(template.description || "");
+        setPlanDays([{
+            day: "",
+            calendarDate: "",
+            exercises: (firstDay.exercises || []).map((exercise) => ({
+                name: exercise.name,
+                sets: exercise.sets,
+                reps: exercise.reps,
+                videoUrl: exercise.videoUrl || "",
+                notes: exercise.notes || "",
+            })),
+        }]);
+    };
+
+    const handleTemplateChange = (templateId: string) => {
+        setSelectedTemplateId(templateId);
+        if (!templateId) return;
+        const template = templates.find((item) => item._id === templateId);
+        if (template) {
+            applyTemplate(template);
+        }
+    };
+
+    const handleDeleteTemplate = async () => {
+        if (!selectedTemplateId) return;
+        const template = templates.find((item) => item._id === selectedTemplateId);
+        const label = template?.title || "este modelo";
+        if (!window.confirm(`Queres eliminar ${label}?`)) return;
+
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                alert("Não autenticado");
+                return;
+            }
+            await axios.delete(`http://localhost:3500/workout-templates/${selectedTemplateId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setTemplates((prev) => prev.filter((item) => item._id !== selectedTemplateId));
+            setSelectedTemplateId("");
+        } catch (err: any) {
+            alert(err.response?.data?.message || "Erro ao eliminar modelo.");
+        }
+    };
+
     const handleSubmitPlan = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedStudent) return;
@@ -231,6 +307,31 @@ export default function MyStudents() {
             await axios.post("http://localhost:3500/workouts", payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+
+            if (saveAsTemplate) {
+                const templatePayload = {
+                    title: planTitle,
+                    description: planDescription,
+                    days: planDays.map((day, index) => ({
+                        day: `Treino ${index + 1}`,
+                        exercises: day.exercises.map((exercise) => ({
+                            name: exercise.name,
+                            sets: exercise.sets,
+                            reps: exercise.reps,
+                            videoUrl: exercise.videoUrl || "",
+                            notes: exercise.notes || "",
+                        })),
+                    })),
+                };
+
+                try {
+                    await axios.post("http://localhost:3500/workout-templates", templatePayload, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                } catch (templateError: any) {
+                    alert(templateError.response?.data?.message || "Plano criado, mas não foi possível guardar o modelo.");
+                }
+            }
 
             alert("Plano de treino criado com sucesso!");
             setShowModal(false);
@@ -416,20 +517,50 @@ export default function MyStudents() {
                                     />
                                 </div>
 
+                                <div className="form-group">
+                                    <label>Modelos guardados</label>
+                                    <div className="template-row">
+                                        <select
+                                            value={selectedTemplateId}
+                                            onChange={(e) => handleTemplateChange(e.target.value)}
+                                        >
+                                            <option value="">Sem modelo</option>
+                                            {templates.map((template) => (
+                                                <option key={template._id} value={template._id}>
+                                                    {template.title}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            type="button"
+                                            className="btn-refresh-templates"
+                                            onClick={fetchTemplates}
+                                            disabled={templatesLoading}
+                                        >
+                                            {templatesLoading ? "A carregar..." : "Atualizar"}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn-delete-template"
+                                            onClick={handleDeleteTemplate}
+                                            disabled={!selectedTemplateId}
+                                        >
+                                            Eliminar
+                                        </button>
+                                    </div>
+                                    {templatesError && <p className="template-error">{templatesError}</p>}
+                                    <p className="template-hint">
+                                        Ao aplicar um modelo, os exercícios atuais serão substituídos. Apenas o primeiro dia do modelo e usado.
+                                    </p>
+                                </div>
+
                                 <div className="days-container">
                                     {planDays.map((day, dayIndex) => (
                                         <div key={dayIndex} className="day-item">
                                             <div className="day-header-inputs">
                                                 <div className="day-label">
-                                                    {day.day || "Seleciona uma data"}
+                                                    {day.day || "Treino do dia"}
                                                 </div>
-                                                <button
-                                                    type="button"
-                                                    className="btn-remove-day"
-                                                    onClick={() => handleRemoveDay(dayIndex)}
-                                                >
-                                                    Remover Dia
-                                                </button>
                                             </div>
                                             <div className="date-picker-row">
                                                 <input
@@ -513,9 +644,23 @@ export default function MyStudents() {
                                             </div>
                                         </div>
                                     ))}
-                                    <button type="button" className="btn-add-day" onClick={handleAddDay}>
-                                        + Adicionar Dia
-                                    </button>
+                                </div>
+
+                                <div className="template-save-card">
+                                    <div>
+                                        <p className="template-save-title">Guardar como modelo</p>
+                                        <p className="template-save-text">
+                                            Guarda este treino para reutilizar com outros alunos no futuro.
+                                        </p>
+                                    </div>
+                                    <label className="template-toggle">
+                                        <input
+                                            type="checkbox"
+                                            checked={saveAsTemplate}
+                                            onChange={(e) => setSaveAsTemplate(e.target.checked)}
+                                        />
+                                        Ativar
+                                    </label>
                                 </div>
 
                                 <button type="submit" className="btn-submit-plan">

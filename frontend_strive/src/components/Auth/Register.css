@@ -6,6 +6,42 @@
   max-width: 450px;
 }
 
+.trainer-apply {
+  background: rgba(240, 88, 45, 0.08);
+  border: 1px solid rgba(240, 88, 45, 0.2);
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+}
+
+.trainer-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 700;
+  color: #111111;
+}
+
+.trainer-toggle input {
+  width: 18px;
+  height: 18px;
+}
+
+.trainer-hint {
+  margin: 0.5rem 0 0;
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.trainer-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+  background: #f9f9f9;
+}
+
 .success-message {
   background: #e8f5e9;
   color: #2e7d32;

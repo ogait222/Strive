@@ -8,6 +8,14 @@ export interface IUser {
   password: string;
   role: "client" | "trainer" | "admin";
   trainerId?: Types.ObjectId | null;
+  trainerApplication?: {
+    status: "none" | "pending" | "approved" | "rejected";
+    fullName?: string;
+    birthDate?: Date;
+    certificateFile?: string;
+    idDocumentFile?: string;
+    submittedAt?: Date;
+  };
   createdAt: Date;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
@@ -51,6 +59,18 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>({
   },
   avatarUrl: { type: String },
   trainerId: { type: Schema.Types.ObjectId, ref: "User", default: null },
+  trainerApplication: {
+    status: {
+      type: String,
+      enum: ["none", "pending", "approved", "rejected"],
+      default: "none",
+    },
+    fullName: { type: String },
+    birthDate: { type: Date },
+    certificateFile: { type: String },
+    idDocumentFile: { type: String },
+    submittedAt: { type: Date },
+  },
   createdAt: { type: Date, default: Date.now },
   resetPasswordExpires : { type: Date },
   resetPasswordToken : { type: String },

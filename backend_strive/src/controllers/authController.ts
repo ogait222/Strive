@@ -13,7 +13,17 @@ if (!JWT_SECRET) {
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { name, username, email, password, role } = req.body;
+    const {
+      name,
+      username,
+      email,
+      password,
+      applyForTrainer,
+      fullName,
+      birthDate,
+      certificateFile,
+      idDocumentFile,
+    } = req.body;
 
     const existingUser = await User.findOne({
       $or: [{ email }, { username }],
@@ -23,7 +33,43 @@ export const register = async (req: Request, res: Response) => {
         .status(400)
         .json({ message: "Email ou username já registado" });
 
-    const newUser = new User({ name, username, email, password, role });
+    const trainerApplication = applyForTrainer
+      ? {
+          status: "pending",
+          fullName: typeof fullName === "string" ? fullName.trim() : "",
+          birthDate,
+          certificateFile,
+          idDocumentFile,
+          submittedAt: new Date(),
+        }
+      : undefined;
+
+    if (applyForTrainer) {
+      if (
+        !trainerApplication.fullName ||
+        !birthDate ||
+        !certificateFile ||
+        !idDocumentFile
+      ) {
+        return res.status(400).json({ message: "Preenche todos os dados da candidatura a PT." });
+      }
+
+      const parsedDate = new Date(birthDate);
+      if (isNaN(parsedDate.getTime())) {
+        return res.status(400).json({ message: "Data de nascimento inválida." });
+      }
+
+      trainerApplication.birthDate = parsedDate;
+    }
+
+    const newUser = new User({
+      name,
+      username,
+      email,
+      password,
+      role: "client",
+      trainerApplication,
+    });
     await newUser.save();
 
     res.status(200).json({ message: "Utilizador criado com sucesso!" });

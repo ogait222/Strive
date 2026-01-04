@@ -204,6 +204,11 @@
   border-color: #fecaca;
 }
 
+.day-card.selected {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(240, 88, 45, 0.18);
+}
+
 .day-card:hover {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
   transform: translateY(-2px);

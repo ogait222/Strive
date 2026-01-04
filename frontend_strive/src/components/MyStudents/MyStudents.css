@@ -364,6 +364,108 @@
     color: var(--text-color);
 }
 
+.template-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.template-row select {
+    flex: 1 1 260px;
+    padding: 0.75rem;
+    border-radius: 10px;
+    border: 1px solid var(--card-border);
+    background: var(--bg-color);
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.btn-refresh-templates {
+    padding: 0.65rem 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--card-border);
+    background: #111111;
+    color: #ffffff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-delete-template {
+    padding: 0.65rem 1rem;
+    border-radius: 10px;
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    background: rgba(239, 68, 68, 0.08);
+    color: #ef4444;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.btn-delete-template:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-refresh-templates:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.template-error {
+    color: #ef4444;
+    margin: 0.4rem 0 0;
+    font-weight: 600;
+}
+
+.template-hint {
+    color: var(--secondary-text);
+    font-size: 0.85rem;
+    margin: 0.45rem 0 0;
+}
+
+.single-day-hint {
+    color: var(--secondary-text);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.template-save-card {
+    margin-top: 1.5rem;
+    padding: 1rem 1.2rem;
+    border-radius: 14px;
+    border: 1px solid rgba(240, 88, 45, 0.2);
+    background: linear-gradient(120deg, rgba(240, 88, 45, 0.08), rgba(17, 17, 17, 0.02));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.template-save-title {
+    font-weight: 800;
+    margin: 0 0 0.35rem 0;
+    color: var(--text-color);
+}
+
+.template-save-text {
+    margin: 0;
+    color: var(--secondary-text);
+}
+
+.template-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+.template-toggle input {
+    width: 18px;
+    height: 18px;
+}
+
 .days-container {
     margin-top: 2rem;
 }

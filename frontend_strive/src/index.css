@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
 :root {
   --primary-color: #f0582d;
   --primary-hover: #d34c27;
@@ -28,8 +30,6 @@
   --card-bg: #111827;
   --card-border: #1f2937;
 }
-
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
 
 body {
   margin: 0;

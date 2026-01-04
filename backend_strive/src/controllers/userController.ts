@@ -127,3 +127,47 @@ export const updateAvatar = async (req: AuthenticatedRequest, res: Response) => 
         res.status(500).json({ message: "Erro ao atualizar avatar", error });
     }
 };
+
+export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const { role, applicationStatus } = req.query;
+        const filter: any = {};
+        if (role) filter.role = role;
+        if (applicationStatus) {
+            filter["trainerApplication.status"] = applicationStatus;
+        }
+
+        const users = await User.find(filter).select("-password").sort({ createdAt: -1 });
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: "Erro ao listar utilizadores", error });
+    }
+};
+
+export const updateTrainerApplicationStatus = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        if (!["approved", "rejected"].includes(status)) {
+            return res.status(400).json({ message: "Estado inválido." });
+        }
+
+        const user = await User.findById(id);
+        if (!user) return res.status(404).json({ message: "Utilizador não encontrado" });
+
+        user.trainerApplication = {
+            ...(user.trainerApplication || {}),
+            status,
+        };
+
+        if (status === "approved") {
+            user.role = "trainer";
+        }
+
+        await user.save();
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ message: "Erro ao atualizar candidatura", error });
+    }
+};
