@@ -36,16 +36,16 @@ export const register = async (req: Request, res: Response) => {
 
     const trainerApplication = applyForTrainer
       ? {
-          status: "pending",
-          fullName: typeof fullName === "string" ? fullName.trim() : "",
-          birthDate,
-          certificateFile,
-          idDocumentFile,
-          submittedAt: new Date(),
-        }
+        status: "pending",
+        fullName: typeof fullName === "string" ? fullName.trim() : "",
+        birthDate,
+        certificateFile,
+        idDocumentFile,
+        submittedAt: new Date(),
+      }
       : undefined;
 
-    if (applyForTrainer) {
+    if (applyForTrainer && trainerApplication) {
       if (
         !trainerApplication.fullName ||
         !birthDate ||
