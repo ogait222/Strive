@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import "./Footer.css";
 
+import logo from "../../assets/strive-logozito.png";
+
 export default function Footer() {
   const year = new Date().getFullYear();
 
@@ -9,7 +11,7 @@ export default function Footer() {
       <div className="footer-inner">
         <div className="footer-brand">
           <div className="footer-logo">
-            <img src="/src/assets/strive-logozito.png" className="footer-logo-img" alt="Strive" />
+            <img src={logo} className="footer-logo-img" alt="Strive" />
             <div>
               <h3>Strive</h3>
               <p>Fitness em modo inteligente.</p>

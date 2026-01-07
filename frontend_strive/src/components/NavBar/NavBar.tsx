@@ -6,6 +6,8 @@ import { useTheme } from "../../context/ThemeContext";
 import { API_BASE_URL } from "../../config";
 import { useChatNotifications } from "../../context/ChatNotificationsContext";
 
+import logo from "../../assets/strive-logozito.png";
+
 export default function NavBar() {
   const navigate = useNavigate();
   const [user, setUser] = useState<{ username: string; role: string; name?: string } | null>(null);
@@ -126,7 +128,7 @@ export default function NavBar() {
         }}
         style={{ cursor: 'pointer' }}
       >
-        <img src="/src/assets/strive-logozito.png" className="logo-strive" alt="Logo" />
+        <img src={logo} className="logo-strive" alt="Logo" />
       </div>
 
 
