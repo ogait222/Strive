@@ -7,7 +7,7 @@ import { swaggerSpec } from "./swagger/swagger";
 import express from "express";
 import mongoose from "mongoose";
 import http from "http";
-import { Server as SocketIOServer } from "socket.io";
+import { initSocket } from "./socket";
 
 import authRoutes from "./routes/authRoutes";
 import workoutRoutes from "./routes/workoutRoutes";
@@ -22,11 +22,7 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-export const io = new SocketIOServer(server, {
-  cors: {
-    origin: "*",
-  },
-});
+const io = initSocket(server);
 
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));

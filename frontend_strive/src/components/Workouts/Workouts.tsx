@@ -17,7 +17,7 @@ interface WorkoutDay {
   day: string;
   status?: 'pending' | 'completed' | 'failed';
   exercises: Exercise[];
-  completionPhotoProof?: string; //ainda não implementado
+  completionPhotoProof?: string; 
   failureReason?: string;
   calendarDate?: string;
 }

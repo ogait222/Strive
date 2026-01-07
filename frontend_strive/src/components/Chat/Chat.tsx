@@ -3,6 +3,7 @@ import axios from "axios";
 import { io, Socket } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import NavBar from "../NavBar/NavBar";
+import { useChatNotifications } from "../../context/ChatNotificationsContext";
 import "./Chat.css";
 
 interface IUser {
@@ -41,7 +42,10 @@ const Chat: React.FC = () => {
     const [showSearch, setShowSearch] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const activeChatRef = useRef<IChat | null>(null);
+    const joinedChatIdsRef = useRef<Set<string>>(new Set());
     const navigate = useNavigate();
+    const { setActiveChatId, setUnreadChatCount } = useChatNotifications();
 
     // Initial Setup
     useEffect(() => {
@@ -69,6 +73,25 @@ const Chat: React.FC = () => {
         };
     }, [navigate]);
 
+    useEffect(() => {
+        activeChatRef.current = activeChat;
+    }, [activeChat]);
+
+    useEffect(() => {
+        setActiveChatId(activeChat?._id ?? null);
+    }, [activeChat, setActiveChatId]);
+
+    useEffect(() => {
+        return () => {
+            setActiveChatId(null);
+        };
+    }, [setActiveChatId]);
+
+    useEffect(() => {
+        const totalUnread = chats.reduce((acc, chat) => acc + (chat.unreadCount || 0), 0);
+        setUnreadChatCount(totalUnread);
+    }, [chats, setUnreadChatCount]);
+
     // Load Chats
     useEffect(() => {
         if (currentUser) {
@@ -76,35 +99,50 @@ const Chat: React.FC = () => {
         }
     }, [currentUser]);
 
+    useEffect(() => {
+        if (!socket) return;
+
+        chats.forEach((chat) => {
+            if (joinedChatIdsRef.current.has(chat._id)) return;
+            socket.emit("joinChat", chat._id);
+            joinedChatIdsRef.current.add(chat._id);
+        });
+    }, [socket, chats]);
+
     // Socket Listeners
     useEffect(() => {
-        if (socket) {
-            socket.on("newMessage", (message: IMessage) => {
-                if (activeChat && message.chatId === activeChat._id) {
-                    setMessages((prev) => {
-                        if (prev.some(m => m._id === message._id)) return prev;
-                        return [...prev, message];
-                    });
-                    // If we are in the chat, we should mark it as read immediately? 
-                    // Or rely on user action. For now let's leave it, but maybe update UI.
-                    markChatAsRead(activeChat._id);
-                    scrollToBottom();
-                } else {
-                    // If message is for another chat, increment unread count locally if we want instant update
-                    setChats(prev => prev.map(c =>
-                        c._id === message.chatId
-                            ? { ...c, unreadCount: (c.unreadCount || 0) + 1, lastMessage: message, updatedAt: new Date().toISOString() }
-                            : c
-                    ));
-                }
-                // We still fetch chats to ensure consistency, but local update above makes it snappy
-                // fetchChats(); // Optional if local update is robust
-            });
-        }
-        return () => {
-            socket?.off("newMessage");
+        if (!socket) return;
+
+        const handleNewMessage = (message: IMessage) => {
+            const active = activeChatRef.current;
+            const isActiveChat = !!active && message.chatId === active._id;
+
+            if (isActiveChat) {
+                setMessages((prev) => {
+                    if (prev.some(m => m._id === message._id)) return prev;
+                    return [...prev, message];
+                });
+                // If we are in the chat, we should mark it as read immediately? 
+                // Or rely on user action. For now let's leave it, but maybe update UI.
+                markChatAsRead(active!._id);
+                scrollToBottom();
+            } else {
+                // If message is for another chat, increment unread count locally if we want instant update
+                setChats(prev => prev.map(c =>
+                    c._id === message.chatId
+                        ? { ...c, unreadCount: (c.unreadCount || 0) + 1, lastMessage: message, updatedAt: new Date().toISOString() }
+                        : c
+                ));
+            }
+            // We still fetch chats to ensure consistency, but local update above makes it snappy
+            // fetchChats(); // Optional if local update is robust
         };
-    }, [socket, activeChat]);
+
+        socket.on("newMessage", handleNewMessage);
+        return () => {
+            socket.off("newMessage", handleNewMessage);
+        };
+    }, [socket]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -296,7 +334,9 @@ const Chat: React.FC = () => {
             setNewMessage("");
             // Optimistically add message
             const sentMessage = response.data;
-            setMessages((prev) => [...prev, sentMessage]);
+            setMessages((prev) =>
+                prev.some((m) => m._id === sentMessage._id) ? prev : [...prev, sentMessage]
+            );
             scrollToBottom();
 
         } catch (error) {
@@ -349,7 +389,7 @@ const Chat: React.FC = () => {
                 <div className="chat-info">
                     <div className="chat-name">
                         {otherUser.name}
-                        {otherUser.role === 'trainer' && <span style={{ fontSize: '0.8em', color: '#ff8c00', marginLeft: 6 }}>★ Treinador</span>}
+                        {otherUser.role === 'trainer' && <span className="trainer-badge">★ Treinador</span>}
                     </div>
                     {chat.lastMessage && (
                         <div className="chat-last-message">
@@ -511,7 +551,6 @@ const Chat: React.FC = () => {
                         </>
                     ) : (
                         <div className="no-chat-selected">
-                            <span style={{ fontSize: 60 }}>💬</span>
                             <p>Seleciona uma conversa para começares a falar</p>
                         </div>
                     )}

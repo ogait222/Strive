@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Chat } from "../models/Chat";
 import { Message } from "../models/Message";
+import { getIo } from "../socket";
 
 export const createOrGetChat = async (req: Request, res: Response) => {
   try {
@@ -36,6 +37,10 @@ export const sendMessage = async (req: Request, res: Response) => {
     });
 
     await Chat.findByIdAndUpdate(chatId, { lastMessage: message._id });
+    const io = getIo();
+    if (io) {
+      io.to(chatId).emit("newMessage", message);
+    }
 
     res.status(201).json(message);
   } catch (err) {
@@ -59,7 +64,7 @@ export const getUserChats = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const chats = await Chat.find({ participants: userId })
-      .populate("participants", "name role")
+      .populate("participants", "name role avatarUrl")
       .populate("lastMessage") // Assuming lastMessage is a reference properly populated
       .lean(); // Convert to plain object to attach custom properties
 

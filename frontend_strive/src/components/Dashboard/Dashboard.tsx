@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import type { KeyboardEvent } from "react";
 import axios from "axios";
+import { toast } from "react-toastify";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import NavBar from "../NavBar/NavBar";
 import "./Dashboard.css";
 
@@ -10,6 +12,7 @@ interface Trainer {
   name: string;
   username: string;
   email: string;
+  avatarUrl?: string;
 }
 
 interface UserProfile {
@@ -24,7 +27,7 @@ interface UserProfile {
 
 interface WorkoutDay {
   status?: "pending" | "completed" | "failed";
-  calendarDate?: string;
+  calendarDate?: string | Date;
   day?: string;
   completionPhotoProof?: string;
 }
@@ -34,24 +37,90 @@ interface WorkoutPlan {
   days: WorkoutDay[];
 }
 
+interface Notification {
+  _id: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+}
+
 interface CalendarCell {
   label: string;
   workouts?: WorkoutDay[];
   dateKey?: string;
+  isToday?: boolean;
+}
+
+interface TodayWorkout {
+  workoutDay: WorkoutDay;
+  planTitle?: string;
 }
 
 type Student = UserProfile;
+
+type WorkoutPeriodStats = {
+  done: number;
+  failed: number;
+  total: number;
+  percent: number;
+  isFallback?: boolean;
+};
+
+type RatioChartProps = {
+  done: number;
+  total: number;
+  percent: number;
+  color: string;
+  label: string;
+};
+
+const RatioChart = ({ done, total, percent, color, label }: RatioChartProps) => {
+  const remaining = Math.max(total - done, 0);
+  const hasData = total > 0;
+  const data = hasData
+    ? [
+        { name: "Concluidos", value: done },
+        { name: "Restantes", value: remaining },
+      ]
+    : [{ name: "Sem dados", value: 1 }];
+  const colors = hasData ? [color, "var(--card-border)"] : ["var(--card-border)"];
+
+  return (
+    <div className="stat-chart" role="img" aria-label={`${label} ${percent}%`}>
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={data}
+            dataKey="value"
+            innerRadius="65%"
+            outerRadius="90%"
+            paddingAngle={hasData ? 2 : 0}
+            cornerRadius={hasData ? 6 : 0}
+            startAngle={90}
+            endAngle={-270}
+          >
+            {data.map((_, index) => (
+              <Cell key={`cell-${index}`} fill={colors[index]} stroke="none" />
+            ))}
+          </Pie>
+        </PieChart>
+      </ResponsiveContainer>
+      <div className="stat-chart__label">{percent}%</div>
+    </div>
+  );
+};
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const lastToastAtRef = useRef(0);
 
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [workoutStats, setWorkoutStats] = useState({
-    week: { done: 0, total: 0, percent: 0 },
-    month: { done: 0, total: 0, percent: 0 },
+    week: { done: 0, failed: 0, total: 0, percent: 0 },
+    month: { done: 0, failed: 0, total: 0, percent: 0 },
   });
   const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
 
@@ -64,112 +133,82 @@ export default function Dashboard() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [selectedPlans, setSelectedPlans] = useState<WorkoutPlan[]>([]);
   const [selectedStats, setSelectedStats] = useState({
-    week: { done: 0, total: 0, percent: 0 },
-    month: { done: 0, total: 0, percent: 0 },
+    week: { done: 0, failed: 0, total: 0, percent: 0 },
+    month: { done: 0, failed: 0, total: 0, percent: 0 },
   });
   const [selectedLoading, setSelectedLoading] = useState(false);
-
-  const clientItems = [
-    { title: "Treinos", description: "Veja e gerencie seus planos de treino", icon: "💪", path: "/workouts" },
-    {
-      title: "Notificações",
-      description: "Verifique suas notificações",
-      icon: (
-        <div className="notification-badge-container">
-          <span>🔔</span>
-          {unreadCount > 0 && <div className="unread-badge">{unreadCount > 9 ? "9+" : unreadCount}</div>}
-        </div>
-      ),
-      path: "/notifications",
-    },
-    {
-      title: "Chat",
-      description: "Fale com seu personal trainer",
-      icon: (
-        <div className="notification-badge-container">
-          <span>💬</span>
-          {unreadChatCount > 0 && <div className="unread-badge">{unreadChatCount > 9 ? "9+" : unreadChatCount}</div>}
-        </div>
-      ),
-      path: "/chat",
-    },
-    { title: "Log de Treinos", description: "Registre seus treinos realizados", icon: "📝", path: "/workout-log" },
-    { title: "Perfil", description: "Dados pessoais e foto de perfil", icon: "👤", path: "/profile" },
-  ];
-
-  const trainerItems = [
-    { title: "Meus Alunos", description: "Gerencie seus alunos e planos de treino", icon: "👥", path: "/my-students" },
-    {
-      title: "Notificações",
-      description: "Verifique suas notificações",
-      icon: (
-        <div className="notification-badge-container">
-          <span>🔔</span>
-          {unreadCount > 0 && <div className="unread-badge">{unreadCount > 9 ? "9+" : unreadCount}</div>}
-        </div>
-      ),
-      path: "/notifications",
-    },
-    {
-      title: "Chat",
-      description: "Converse com seus alunos",
-      icon: (
-        <div className="notification-badge-container">
-          <span>💬</span>
-          {unreadChatCount > 0 && <div className="unread-badge">{unreadChatCount > 9 ? "9+" : unreadChatCount}</div>}
-        </div>
-      ),
-      path: "/chat",
-    },
-    { title: "Perfil", description: "Dados pessoais e foto de perfil", icon: "👤", path: "/profile" },
-  ];
-
-  const dashboardItems = user?.role === "trainer" ? trainerItems : clientItems;
+  const toastStorageKey = "trainerLastNotificationToastAt";
 
   const buildWorkoutStats = (plans: WorkoutPlan[]) => {
+    const allDays = plans.flatMap((plan) => plan.days || []);
     const now = new Date();
+    const endOfToday = new Date(now);
+    endOfToday.setHours(23, 59, 59, 999);
     const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - 6);
-    const monthStart = new Date(now);
-    monthStart.setDate(now.getDate() - 29);
+    const weekDay = weekStart.getDay();
+    const weekOffset = (weekDay + 6) % 7;
+    weekStart.setDate(weekStart.getDate() - weekOffset);
+    weekStart.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    monthStart.setHours(0, 0, 0, 0);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    monthEnd.setHours(23, 59, 59, 999);
 
-    let weekTotal = 0;
-    let weekDone = 0;
-    let monthTotal = 0;
-    let monthDone = 0;
-
-    plans.forEach((plan) => {
-      plan.days?.forEach((day) => {
-        if (!day.calendarDate) return;
-        const dayDate = new Date(day.calendarDate);
-        if (isNaN(dayDate.getTime())) return;
-
-        const isFinished = day.status && day.status !== "pending";
-        const isCompletedWithProof = day.status === "completed" && day.completionPhotoProof;
-
-        if (dayDate >= weekStart && dayDate <= now && isFinished) {
-          weekTotal += 1;
-          if (isCompletedWithProof) weekDone += 1;
+    const normalizeDate = (value?: string | Date) => {
+      if (!value) return null;
+      if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? null : value;
+      }
+      const raw = value.split("T")[0];
+      const parts = raw.split("-");
+      if (parts.length === 3) {
+        const year = Number(parts[0]);
+        const month = Number(parts[1]);
+        const day = Number(parts[2]);
+        if (year && month && day) {
+          return new Date(year, month - 1, day);
         }
+      }
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    };
 
-        if (dayDate >= monthStart && dayDate <= now && isFinished) {
-          monthTotal += 1;
-          if (isCompletedWithProof) monthDone += 1;
-        }
-      });
+    const computeStats = (days: WorkoutDay[]): WorkoutPeriodStats => {
+      const total = days.length;
+      const done = days.filter((day) => day.status === "completed").length;
+      const failed = days.filter((day) => day.status === "failed").length;
+      const percent = total ? Math.round((done / total) * 100) : 0;
+      return { done, failed, total, percent };
+    };
+
+    const weekDays = allDays.filter((day) => {
+      const dayDate = normalizeDate(day.calendarDate);
+      return dayDate ? dayDate >= weekStart && dayDate <= weekEnd : false;
     });
 
-    const weekPercent = weekTotal ? Math.round((weekDone / weekTotal) * 100) : 0;
-    const monthPercent = monthTotal ? Math.round((monthDone / monthTotal) * 100) : 0;
+    const monthDays = allDays.filter((day) => {
+      const dayDate = normalizeDate(day.calendarDate);
+      return dayDate ? dayDate >= monthStart && dayDate <= monthEnd : false;
+    });
+
+    const weekStats = computeStats(weekDays);
+    const monthStats = computeStats(monthDays);
 
     return {
-      week: { done: weekDone, total: weekTotal, percent: weekPercent },
-      month: { done: monthDone, total: monthTotal, percent: monthPercent },
+      week: weekStats,
+      month: monthStats,
     };
   };
 
+  const getDateKey = (date: Date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
   const buildCalendar = (plans: WorkoutPlan[]) => {
     const today = new Date();
+    const todayKey = getDateKey(today);
     const year = today.getFullYear();
     const month = today.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
@@ -192,7 +231,7 @@ export default function Dashboard() {
 
     for (let day = 1; day <= daysInMonth; day++) {
       const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-      cells.push({ label: String(day), workouts: map[key], dateKey: key });
+      cells.push({ label: String(day), workouts: map[key], dateKey: key, isToday: key === todayKey });
     }
 
     return {
@@ -221,7 +260,69 @@ export default function Dashboard() {
     }
   };
 
+  const parseNotificationTime = (value?: string) => {
+    if (!value) return 0;
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  };
+
+  const getLastToastAt = () => {
+    if (lastToastAtRef.current) return lastToastAtRef.current;
+    const stored = localStorage.getItem(toastStorageKey);
+    const parsed = stored ? Date.parse(stored) : 0;
+    lastToastAtRef.current = Number.isNaN(parsed) ? 0 : parsed;
+    return lastToastAtRef.current;
+  };
+
+  const setLastToastAt = (value: number) => {
+    lastToastAtRef.current = value;
+    if (value > 0) {
+      localStorage.setItem(toastStorageKey, new Date(value).toISOString());
+    }
+  };
+
+  const maybeShowTrainerToast = (notifications: Notification[], role?: string) => {
+    if (role !== "trainer") return;
+    const latestUnread = notifications
+      .filter((notification) => !notification.read)
+      .reduce<Notification | null>((latest, current) => {
+        if (!latest) return current;
+        return parseNotificationTime(current.createdAt) > parseNotificationTime(latest.createdAt)
+          ? current
+          : latest;
+      }, null);
+
+    if (!latestUnread) return;
+    const latestTime = parseNotificationTime(latestUnread.createdAt);
+    if (!latestTime || latestTime <= getLastToastAt()) return;
+
+    toast.info(`Nova notificação: ${latestUnread.message}`, {
+      onClick: () => navigate("/notifications"),
+      closeOnClick: true,
+      autoClose: 7000,
+    });
+    setLastToastAt(latestTime);
+  };
+
   useEffect(() => {
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+    const refreshNotifications = async (role?: string) => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const response = await axios.get("http://localhost:3500/notifications", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const notifications = response.data || [];
+        const notifCount = notifications.filter((n: Notification) => !n.read).length;
+        setUnreadCount(notifCount);
+        maybeShowTrainerToast(notifications, role);
+      } catch (error) {
+        console.error("Erro ao atualizar notificações:", error);
+      }
+    };
+
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem("token");
@@ -250,8 +351,10 @@ export default function Dashboard() {
           axios.get(`http://localhost:3500/chats/user/${currentUserId}`, config),
         ]);
 
-        const notifCount = notificationsRes.data.filter((n: any) => !n.read).length;
+        const notifications = notificationsRes.data || [];
+        const notifCount = notifications.filter((n: Notification) => !n.read).length;
         setUnreadCount(notifCount);
+        maybeShowTrainerToast(notifications, currentUser.role);
 
         const chats = chatsRes.data;
         const chatCount = chats.reduce((acc: number, chat: any) => acc + (chat.unreadCount || 0), 0);
@@ -277,6 +380,12 @@ export default function Dashboard() {
             setStudentsLoading(false);
           }
         }
+
+        if (currentUser.role === "trainer") {
+          pollTimer = setInterval(() => {
+            refreshNotifications(currentUser.role);
+          }, 30000);
+        }
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
       } finally {
@@ -284,15 +393,39 @@ export default function Dashboard() {
       }
     };
     fetchProfile();
+
+    return () => {
+      if (pollTimer) clearInterval(pollTimer);
+    };
   }, []);
 
   const calendarData = useMemo(() => buildCalendar(workoutPlans), [workoutPlans]);
   const selectedCalendar = useMemo(() => buildCalendar(selectedPlans), [selectedPlans]);
+  const todayKey = getDateKey(new Date());
+  const todayWorkouts = useMemo(() => {
+    const workouts: TodayWorkout[] = [];
+    workoutPlans.forEach((plan) => {
+      plan.days?.forEach((day) => {
+        if (!day.calendarDate) return;
+        const key = day.calendarDate.split("T")[0];
+        if (key === todayKey) {
+          workouts.push({ workoutDay: day, planTitle: plan.title });
+        }
+      });
+    });
+    return workouts;
+  }, [todayKey, workoutPlans]);
 
   const statusColor = (status?: string) => {
     if (status === "completed") return "#22c55e";
     if (status === "failed") return "#ef4444";
     return "#f59e0b";
+  };
+
+  const statusLabel = (status?: string) => {
+    if (status === "completed") return "Concluído";
+    if (status === "failed") return "Falhado";
+    return "Pendente";
   };
 
   const paginatedStudents = students.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -333,7 +466,11 @@ export default function Dashboard() {
               <div className="my-trainer-card">
                 <div className="trainer-info">
                   <div className="trainer-avatar-small">
-                    {user.trainerId.name.charAt(0).toUpperCase()}
+                    {user.trainerId.avatarUrl ? (
+                      <img src={user.trainerId.avatarUrl} alt={user.trainerId.name} />
+                    ) : (
+                      user.trainerId.name.charAt(0).toUpperCase()
+                    )}
                   </div>
                   <div>
                     <h3>{user.trainerId.name}</h3>
@@ -362,23 +499,20 @@ export default function Dashboard() {
                 <div className="stat-header">
                   <span className="stat-eyebrow">Semana</span>
                   <span className="stat-meta">
-                    {workoutStats.week.done}/{workoutStats.week.total} concluídos
+                    {workoutStats.week.done}/{workoutStats.week.total} concluídos · {workoutStats.week.failed} falhados
                   </span>
                 </div>
                 <div className="stat-body">
-                  <div
-                    className="progress-circle"
-                    style={{
-                      background: `conic-gradient(var(--primary-color) ${workoutStats.week.percent * 3.6}deg, rgba(0,0,0,0.06) 0deg)`,
-                    }}
-                  >
-                    <div className="progress-inner">
-                      <span>{workoutStats.week.percent}%</span>
-                    </div>
-                  </div>
+                  <RatioChart
+                    done={workoutStats.week.done}
+                    total={workoutStats.week.total}
+                    percent={workoutStats.week.percent}
+                    color="var(--primary-color)"
+                    label="Ratio semanal"
+                  />
                   <div className="stat-labels">
                     <strong>Ratio semanal</strong>
-                    <p>Concluídos vs. agendados nos últimos 7 dias.</p>
+                    <p>Concluídos vs. agendados na semana atual.</p>
                   </div>
                 </div>
               </div>
@@ -387,26 +521,56 @@ export default function Dashboard() {
                 <div className="stat-header">
                   <span className="stat-eyebrow">Mês</span>
                   <span className="stat-meta">
-                    {workoutStats.month.done}/{workoutStats.month.total} concluídos
+                    {workoutStats.month.done}/{workoutStats.month.total} concluídos · {workoutStats.month.failed} falhados
                   </span>
                 </div>
                 <div className="stat-body">
-                  <div
-                    className="progress-circle"
-                    style={{
-                      background: `conic-gradient(#10b981 ${workoutStats.month.percent * 3.6}deg, rgba(0,0,0,0.06) 0deg)`,
-                    }}
-                  >
-                    <div className="progress-inner">
-                      <span>{workoutStats.month.percent}%</span>
-                    </div>
-                  </div>
+                  <RatioChart
+                    done={workoutStats.month.done}
+                    total={workoutStats.month.total}
+                    percent={workoutStats.month.percent}
+                    color="#10b981"
+                    label="Ratio mensal"
+                  />
                   <div className="stat-labels">
                     <strong>Ratio mensal</strong>
-                    <p>Concluídos vs. agendados nos últimos 30 dias.</p>
+                    <p>Concluídos vs. agendados no mês atual.</p>
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="today-workout">
+              <div className="today-header">
+                <div>
+                  <p className="eyebrow">Treino de hoje</p>
+                  <h2>{formatCalendarLabel(todayKey)}</h2>
+                </div>
+                {todayWorkouts.length > 0 && (
+                  <button className="today-link" onClick={() => navigate(`/workouts?date=${todayKey}`)}>
+                    Ver plano
+                  </button>
+                )}
+              </div>
+              {todayWorkouts.length === 0 ? (
+                <div className="today-empty">
+                  <p>Hoje não tens treino agendado.</p>
+                </div>
+              ) : (
+                <div className="today-list">
+                  {todayWorkouts.map((workout, idx) => (
+                    <div key={idx} className="today-item">
+                      <div>
+                        <strong>{workout.planTitle || workout.workoutDay.day || "Treino"}</strong>
+                        <p>{statusLabel(workout.workoutDay.status)}</p>
+                      </div>
+                      <span className="today-status" style={{ background: statusColor(workout.workoutDay.status) }}>
+                        {statusLabel(workout.workoutDay.status)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="calendar-section">
@@ -436,7 +600,7 @@ export default function Dashboard() {
                 {calendarData.cells.map((cell, idx) => (
                   <div
                     key={idx}
-                    className={`calendar-day ${cell.workouts?.length ? "has-workout clickable" : ""}`}
+                    className={`calendar-day ${cell.workouts?.length ? "has-workout clickable" : ""} ${cell.isToday && cell.label ? "is-today" : ""}`}
                     role={cell.workouts?.length ? "button" : undefined}
                     tabIndex={cell.workouts?.length ? 0 : -1}
                     aria-label={cell.workouts?.length ? `Treinos em ${formatCalendarLabel(cell.dateKey)}` : undefined}
@@ -544,23 +708,20 @@ export default function Dashboard() {
                         <div className="stat-header">
                           <span className="stat-eyebrow">Semana</span>
                           <span className="stat-meta">
-                            {selectedStats.week.done}/{selectedStats.week.total} concluídos
+                            {selectedStats.week.done}/{selectedStats.week.total} concluídos · {selectedStats.week.failed} falhados
                           </span>
                         </div>
                         <div className="stat-body">
-                          <div
-                            className="progress-circle"
-                            style={{
-                              background: `conic-gradient(var(--primary-color) ${selectedStats.week.percent * 3.6}deg, rgba(0,0,0,0.06) 0deg)`,
-                            }}
-                          >
-                            <div className="progress-inner">
-                              <span>{selectedStats.week.percent}%</span>
-                            </div>
-                          </div>
+                          <RatioChart
+                            done={selectedStats.week.done}
+                            total={selectedStats.week.total}
+                            percent={selectedStats.week.percent}
+                            color="var(--primary-color)"
+                            label="Ratio semanal"
+                          />
                           <div className="stat-labels">
                             <strong>Ratio semanal</strong>
-                            <p>Concluídos vs. agendados nos últimos 7 dias.</p>
+                            <p>Concluídos vs. agendados na semana atual.</p>
                           </div>
                         </div>
                       </div>
@@ -569,23 +730,20 @@ export default function Dashboard() {
                         <div className="stat-header">
                           <span className="stat-eyebrow">Mês</span>
                           <span className="stat-meta">
-                            {selectedStats.month.done}/{selectedStats.month.total} concluídos
+                            {selectedStats.month.done}/{selectedStats.month.total} concluídos · {selectedStats.month.failed} falhados
                           </span>
                         </div>
                         <div className="stat-body">
-                          <div
-                            className="progress-circle"
-                            style={{
-                              background: `conic-gradient(#10b981 ${selectedStats.month.percent * 3.6}deg, rgba(0,0,0,0.06) 0deg)`,
-                            }}
-                          >
-                            <div className="progress-inner">
-                              <span>{selectedStats.month.percent}%</span>
-                            </div>
-                          </div>
+                          <RatioChart
+                            done={selectedStats.month.done}
+                            total={selectedStats.month.total}
+                            percent={selectedStats.month.percent}
+                            color="#10b981"
+                            label="Ratio mensal"
+                          />
                           <div className="stat-labels">
                             <strong>Ratio mensal</strong>
-                            <p>Concluídos vs. agendados nos últimos 30 dias.</p>
+                            <p>Concluídos vs. agendados no mês atual (inclui futuros).</p>
                           </div>
                         </div>
                       </div>

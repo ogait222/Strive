@@ -1,20 +1,8 @@
-- Calendário sincronizado com workout quando se clica no dia que tem treino. CONCLUIDO
-- Fix dashboard de cliente foto perfil do treinador
+- Fix dashboard de cliente, foto perfil do treinador
 - Home page , login , register css
-- Melhorar css dos botões (focus)
-- Notificações toast e possibilidade do PT mandar aviso a cliente por falhar treino
-- Fix Dark mode 
-- Aperfeiçoar página de perfil
-- Guardar planos de treinos já passados , para se o PT quiser passar os mesmos exercicios novamente.  CONCLUIDO
 - Fix gráficos de dashboard
-- Arquivar conversas no chat. CONCLUIDO 
-- Mecanismo sort e de pesquisa no componente My Students.  CONCLUIDO
-- Bloquear a possibilidade de concluir ou falhar um treino do "futuro"
-- Se cliente não for ao treino ao clicar no botao deve indicar um motivo (dispara notificação).  CONCLUIDO
-- Opçao para aplicação de personal trainer (aceite pelo admin)
-- Painel do admin
+- Bloquear a possibilidade de concluir ou falhar um treino do "futuro". 
 - PT pode registar clientes por ele mesmo. 
 - Filtros de pesquisa e ordenação dos planos de treinos por dia (trainer side e client side)
+- Login QR Code
 
-
-"Só" isso para já. 

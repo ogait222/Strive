@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Home.css";
 import NavBar from "../NavBar/NavBar";
+import Footer from "../Footer/Footer";
 
 
 export default function Home() {
@@ -22,22 +23,21 @@ export default function Home() {
   return (
     <div className="home-container">
       <NavBar />
-      <section className="main-section">
-        <div className="main-text">
+      <section className="hero-section">
+        <div className="hero-overlay" aria-hidden="true"></div>
+        <div className="hero-content">
           <h1>
-            Treinos inteligentes. <br /> Acompanhamento real.
+            Diz olá ao Strive,
+            <br /> #1 em acompanhemento fitness personalizado 
           </h1>
           <p>
-            Transforme os seus treinos com orientação profissional, planos inteligentes e acompanhamento contínuo para alcançar resultados reais.
+            Uma plataforma clara, elegante e focada no teu progresso. Acompanha resultados 
+            e comunica diretamente com o teu PT.
           </p>
-
-          <div className="main-buttons">
-            <button className="btn-comecar" >Começar</button>
-            <button className="btn-sabermais">Saber mais</button>
-          </div>
+          <button className="btn-signup" onClick={() => navigate("/register")}>
+            Sign up
+          </button>
         </div>
-
-
       </section>
 
       <section className="main-features">
@@ -54,6 +54,7 @@ export default function Home() {
           <p>Acompanhe o seu progresso com gráficos e estatísticas claras para analísar o seu próprio progresso.</p>
         </div>
       </section>
+      <Footer />
     </div >
   );
 }

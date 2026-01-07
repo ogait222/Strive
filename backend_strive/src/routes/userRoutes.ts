@@ -4,10 +4,15 @@ import {
   selectTrainer,
   getMe,
   getStudents,
+  createStudent,
+  createTrainer,
   searchUsers,
   updateAvatar,
+  updatePassword,
   getUsers,
   updateTrainerApplicationStatus,
+  updateUserRole,
+  deleteUser,
 } from "../controllers/userController";
 import { verifyToken, authorizeRoles } from "../middlewares/authMiddleware";
 
@@ -33,6 +38,7 @@ const router = Router();
  *         description: Lista de treinadores
  */
 router.get("/trainers", verifyToken, getTrainers);
+router.post("/trainers", verifyToken, authorizeRoles("admin"), createTrainer);
 
 /**
  * @swagger
@@ -87,6 +93,35 @@ router.get("/students", verifyToken, authorizeRoles("trainer"), getStudents);
 
 /**
  * @swagger
+ * /users/students:
+ *   post:
+ *     summary: Criar aluno associado ao treinador autenticado
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               username:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Aluno criado
+ */
+router.post("/students", verifyToken, authorizeRoles("trainer"), createStudent);
+
+/**
+ * @swagger
  * /users/search:
  *   get:
  *     summary: Pesquisar utilizadores por nome ou username
@@ -106,8 +141,36 @@ router.get("/students", verifyToken, authorizeRoles("trainer"), getStudents);
  */
 router.get("/search", verifyToken, searchUsers);
 router.put("/me/avatar", verifyToken, updateAvatar);
+/**
+ * @swagger
+ * /users/me/password:
+ *   put:
+ *     summary: Atualizar password do utilizador autenticado
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password atualizada com sucesso
+ *       400:
+ *         description: Password atual incorreta ou inválida
+ */
+router.put("/me/password", verifyToken, updatePassword);
 router.get("/", verifyToken, authorizeRoles("admin"), getUsers);
 router.put("/:id/trainer-application", verifyToken, authorizeRoles("admin"), updateTrainerApplicationStatus);
+router.put("/:id/role", verifyToken, authorizeRoles("admin"), updateUserRole);
+router.delete("/:id", verifyToken, authorizeRoles("admin"), deleteUser);
 
 
 export default router;

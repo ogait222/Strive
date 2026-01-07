@@ -9,6 +9,7 @@ interface Trainer {
     name: string;
     username: string;
     email: string;
+    avatarUrl?: string;
 }
 
 interface UserProfile {
@@ -16,6 +17,7 @@ interface UserProfile {
     trainerId?: {
         _id: string;
         name: string;
+        avatarUrl?: string;
     } | null;
 }
 
@@ -125,7 +127,11 @@ export default function ChangeTrainerRequest() {
                     {availableTrainers.map((trainer) => (
                         <div key={trainer._id} className="trainer-card">
                             <div className="trainer-avatar">
-                                {trainer.name.charAt(0).toUpperCase()}
+                                {trainer.avatarUrl ? (
+                                    <img src={trainer.avatarUrl} alt={trainer.name} />
+                                ) : (
+                                    trainer.name.charAt(0).toUpperCase()
+                                )}
                             </div>
                             <h2>{trainer.name}</h2>
                             <p>@{trainer.username}</p>

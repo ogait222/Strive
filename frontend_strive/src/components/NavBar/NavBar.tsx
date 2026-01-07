@@ -1,26 +1,35 @@
 import { useState, useEffect, useRef} from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import "../NavBar/NavBar.css";
+import { useTheme } from "../../context/ThemeContext";
+import { useChatNotifications } from "../../context/ChatNotificationsContext";
 
 export default function NavBar() {
   const navigate = useNavigate();
   const [user, setUser] = useState<{ username: string; role: string; name?: string } | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { theme, toggleTheme } = useTheme();
+  const { unreadChatCount } = useChatNotifications();
   const navItems: { label: string; path: string }[] = user
     ? user.role === "client"
       ? [
           { label: "Treinos", path: "/workouts" },
           { label: "Notificações", path: "/notifications" },
           { label: "Chat", path: "/chat" },
-          { label: "Log Treinos", path: "/*" },
         ]
       : user.role === "trainer"
       ? [
           { label: "Meus Clientes", path: "/my-students" },
           { label: "Notificações", path: "/notifications" },
+          { label: "Chat", path: "/chat" },
+        ]
+      : user.role === "admin"
+      ? [
+          { label: "Dashboard", path: "/admin-dashboard" },
           { label: "Chat", path: "/chat" },
         ]
       : []
@@ -29,7 +38,6 @@ export default function NavBar() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
-    const storedTheme = localStorage.getItem("theme");
     const storedAvatar = localStorage.getItem("avatarUrl");
 
     if (token && storedUser) {
@@ -50,11 +58,6 @@ export default function NavBar() {
       }
     }
 
-    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const initialTheme = (storedTheme as "light" | "dark") || (prefersDark ? "dark" : "light");
-    setTheme(initialTheme);
-    document.documentElement.setAttribute("data-theme", initialTheme);
-
     // Close dropdown when clicking outside
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -68,12 +71,24 @@ export default function NavBar() {
     };
   }, []);
 
-  const toggleTheme = () => {
-    const nextTheme = theme === "light" ? "dark" : "light";
-    setTheme(nextTheme);
-    localStorage.setItem("theme", nextTheme);
-    document.documentElement.setAttribute("data-theme", nextTheme);
-  };
+  useEffect(() => {
+    const fetchUnreadNotifications = async () => {
+      try {
+        if (!user) return;
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const response = await axios.get("http://localhost:3500/notifications", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const unread = response.data.filter((item: any) => !item.read).length;
+        setUnreadNotifications(unread);
+      } catch (error) {
+        console.error("Erro ao carregar notificações", error);
+      }
+    };
+
+    fetchUnreadNotifications();
+  }, [user]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -121,10 +136,20 @@ export default function NavBar() {
               <button
                 key={item.label}
                 type="button"
-                className="main-btns"
+                className={`main-btns ${item.path === "/notifications" ? "notification-btn" : ""}`}
                 onClick={() => navigate(item.path)}
               >
                 {item.label}
+                {item.path === "/notifications" && unreadNotifications > 0 && (
+                  <span className="nav-badge" aria-label="Novas notificações">
+                    {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                  </span>
+                )}
+                {item.path === "/chat" && unreadChatCount > 0 && (
+                  <span className="nav-badge" aria-label="Mensagens não lidas">
+                    {unreadChatCount > 9 ? "9+" : unreadChatCount}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -132,9 +157,6 @@ export default function NavBar() {
       </div>
 
       <div className="nav-links">
-        <button className="theme-toggle" onClick={toggleTheme} aria-label="Alternar tema">
-          {theme === "dark" ? "🌙" : "☀️"}
-        </button>
         {user ? (
           <div className="user-menu" ref={dropdownRef}>
             <div className="user-toggle" onClick={() => setShowDropdown(!showDropdown)}>
@@ -152,6 +174,14 @@ export default function NavBar() {
               <div className="dropdown-menu">
                 <button onClick={() => navigate('/profile')} className="dropdown-item">
                   Perfil
+                </button>
+                <button
+                  onClick={toggleTheme}
+                  className="dropdown-item theme-item"
+                  aria-pressed={theme === "dark"}
+                >
+                  <span>{theme === "dark" ? "Desativar modo escuro" : "Ativar modo escuro"}</span>
+                  <span className="theme-indicator">{theme === "dark" ? "🌙" : "☀️"}</span>
                 </button>
                 <button onClick={handleLogout} className="dropdown-item logout-btn">
                   Sair

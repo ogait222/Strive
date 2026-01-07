@@ -20,6 +20,8 @@ export interface IUser {
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   avatarUrl?: string;
+  qrLoginToken?: string;
+  qrLoginExpires?: Date;
 }
 
 export interface IUserMethods {
@@ -74,6 +76,8 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>({
   createdAt: { type: Date, default: Date.now },
   resetPasswordExpires : { type: Date },
   resetPasswordToken : { type: String },
+  qrLoginToken: { type: String },
+  qrLoginExpires: { type: Date },
 });
 
 

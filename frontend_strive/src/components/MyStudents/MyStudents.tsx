@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../NavBar/NavBar";
+import defaultAvatar from "../../assets/default-avatar.png";
 import "./MyStudents.css";
 
 interface User {
@@ -9,6 +10,7 @@ interface User {
     username: string;
     email: string;
     role: string;
+    avatarUrl?: string;
 }
 
 interface Exercise {
@@ -54,6 +56,15 @@ export default function MyStudents() {
 
     // Modal State
     const [showModal, setShowModal] = useState(false);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [createStudentLoading, setCreateStudentLoading] = useState(false);
+    const [createStudentError, setCreateStudentError] = useState("");
+    const [createStudentData, setCreateStudentData] = useState({
+        name: "",
+        username: "",
+        email: "",
+        password: "",
+    });
     const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
     const [planTitle, setPlanTitle] = useState("");
     const [planDescription, setPlanDescription] = useState("");
@@ -103,6 +114,17 @@ export default function MyStudents() {
         }
     };
 
+    const openCreateStudentModal = () => {
+        setCreateStudentData({
+            name: "",
+            username: "",
+            email: "",
+            password: "",
+        });
+        setCreateStudentError("");
+        setShowCreateModal(true);
+    };
+
     const handleOpenModal = (student: User) => {
         setSelectedStudent(student);
         setPlanTitle("");
@@ -112,6 +134,44 @@ export default function MyStudents() {
         setSaveAsTemplate(false);
         fetchTemplates();
         setShowModal(true);
+    };
+
+    const handleCreateStudent = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (createStudentLoading) return;
+
+        setCreateStudentLoading(true);
+        setCreateStudentError("");
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                setCreateStudentError("Não autenticado");
+                return;
+            }
+
+            const payload = {
+                name: createStudentData.name.trim(),
+                username: createStudentData.username.trim(),
+                email: createStudentData.email.trim(),
+                password: createStudentData.password,
+            };
+
+            const response = await axios.post(
+                "http://localhost:3500/users/students",
+                payload,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (response.data?.user) {
+                setStudents((prev) => [response.data.user, ...prev]);
+            }
+            setShowCreateModal(false);
+            alert("Cliente criado com sucesso!");
+        } catch (err: any) {
+            setCreateStudentError(err.response?.data?.message || "Erro ao criar cliente");
+        } finally {
+            setCreateStudentLoading(false);
+        }
     };
 
     const formatDayLabel = (dateStr: string) => {
@@ -373,8 +433,6 @@ export default function MyStudents() {
 
                 {error ? (
                     <div className="error-message">{error}</div>
-                ) : students.length === 0 ? (
-                    <p>Ainda não tens clientes associados.</p>
                 ) : (
                     <>
                         <div className="students-toolbar">
@@ -399,17 +457,32 @@ export default function MyStudents() {
                                     <option value="desc">Nome (Z-A)</option>
                                 </select>
                             </div>
+                            <div className="toolbar-actions">
+                                <button className="btn-create-student" onClick={openCreateStudentModal}>
+                                    Criar conta de cliente
+                                </button>
+                            </div>
                         </div>
-                        {visibleStudents.length === 0 ? (
+                        {students.length === 0 ? (
+                            <p>Ainda não tens clientes associados.</p>
+                        ) : visibleStudents.length === 0 ? (
                             <p>Nenhum aluno encontrado.</p>
                         ) : (
                             <div className="students-grid">
                                 {visibleStudents.map(student => (
                                     <div key={student._id} className="student-card">
-                                        <div className="student-info">
-                                            <h3>{student.name}</h3>
-                                            <p>@{student.username}</p>
-                                            <p>{student.email}</p>
+                                        <div className="student-header">
+                                            <div className="student-avatar">
+                                                <img
+                                                    src={student.avatarUrl || defaultAvatar}
+                                                    alt={`Foto de ${student.name}`}
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                            <div className="student-info">
+                                                <h3>{student.name}</h3>
+                                                <p>@{student.username}</p>
+                                            </div>
                                         </div>
                                         <div className="student-actions">
                                             <button className="btn-create-plan" onClick={() => handleOpenModal(student)}>
@@ -485,6 +558,76 @@ export default function MyStudents() {
                                 </div>
                             </div>
                         )}
+                    </div>
+                )}
+
+                {showCreateModal && (
+                    <div className="modal-overlay">
+                        <div className="modal-content create-student-modal">
+                            <div className="modal-header">
+                                <h2>Criar conta de cliente</h2>
+                                <button className="close-modal-btn" onClick={() => setShowCreateModal(false)}>×</button>
+                            </div>
+
+                            <form onSubmit={handleCreateStudent}>
+                                <div className="form-group">
+                                    <label>Nome completo</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={createStudentData.name}
+                                        onChange={(e) =>
+                                            setCreateStudentData((prev) => ({ ...prev, name: e.target.value }))
+                                        }
+                                        placeholder="Ex: Joana Silva"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Username</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={createStudentData.username}
+                                        onChange={(e) =>
+                                            setCreateStudentData((prev) => ({ ...prev, username: e.target.value }))
+                                        }
+                                        placeholder="ex: joana.silva"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Email</label>
+                                    <input
+                                        type="email"
+                                        required
+                                        value={createStudentData.email}
+                                        onChange={(e) =>
+                                            setCreateStudentData((prev) => ({ ...prev, email: e.target.value }))
+                                        }
+                                        placeholder="joana@email.com"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Password</label>
+                                    <input
+                                        type="password"
+                                        required
+                                        value={createStudentData.password}
+                                        onChange={(e) =>
+                                            setCreateStudentData((prev) => ({ ...prev, password: e.target.value }))
+                                        }
+                                        placeholder="Mín. 6 caracteres"
+                                    />
+                                    <p className="password-hint">
+                                        Mínimo 6 caracteres com maiúsculas, minúsculas e números.
+                                    </p>
+                                </div>
+                                {createStudentError && <p className="form-error">{createStudentError}</p>}
+
+                                <button type="submit" className="btn-submit-student" disabled={createStudentLoading}>
+                                    {createStudentLoading ? "A criar..." : "Criar conta"}
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 )}
 

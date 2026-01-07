@@ -29,7 +29,8 @@
     max-height: 50px;
     height: auto;
     object-fit: contain;
-    margin-top: -21px;
+    margin: 0;
+    display: block;
 }
 
 .app-nav-buttons {
@@ -54,6 +55,7 @@
     letter-spacing: 0.01em;
     border-radius: 12px;
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+    position: relative;
 }
 
 .main-btns:hover {
@@ -68,23 +70,28 @@
     border-color: rgba(240, 88, 45, 0.35);
 }
 
+.nav-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 14px rgba(239, 68, 68, 0.4);
+}
+
 .nav-links {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-}
-
-.theme-toggle {
-    background: rgba(0, 0, 0, 0.06);
-    border: 1px solid var(--card-border);
-    color: var(--text-color);
-    padding: 0.45rem 0.7rem;
-    border-radius: 10px;
-    font-size: 1rem;
-}
-
-.theme-toggle:hover {
-    background: rgba(0, 0, 0, 0.1);
 }
 
 .login-button {
@@ -193,6 +200,17 @@
     font-weight: 600;
 }
 
+.dropdown-item.theme-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.theme-indicator {
+    font-size: 0.95rem;
+}
+
 .dropdown-item:hover {
     background-color: rgba(240, 88, 45, 0.08);
     color: var(--primary-color);
@@ -270,10 +288,4 @@
 
 [data-theme='dark'] .dropdown-arrow {
     color: #f58d6c;
-}
-
-[data-theme='dark'] .theme-toggle {
-    background: rgba(255, 255, 255, 0.08);
-    color: #e5e7eb;
-    border-color: #2d3748;
 }

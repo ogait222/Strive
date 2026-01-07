@@ -59,7 +59,9 @@ export const selectTrainer = async (req: Request, res: Response) => {
 export const getMe = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.id;
-        const user = await User.findById(userId).select("-password").populate("trainerId", "name username email");
+        const user = await User.findById(userId)
+            .select("-password")
+            .populate("trainerId", "name username email avatarUrl");
 
         if (!user) return res.status(404).json({ message: "Utilizador não encontrado" });
 
@@ -79,6 +81,91 @@ export const getStudents = async (req: Request, res: Response) => {
         res.status(500).json({ message: "Erro ao buscar alunos", error });
     }
 }
+
+export const createStudent = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const trainerId = req.user?.id;
+        if (!trainerId) return res.status(401).json({ message: "Não autenticado" });
+
+        const { name, username, email, password } = req.body;
+        if (!name || !username || !email || !password) {
+            return res.status(400).json({ message: "Nome, username, email e password são obrigatórios." });
+        }
+
+        const trimmedName = typeof name === "string" ? name.trim() : "";
+        const trimmedUsername = typeof username === "string" ? username.trim() : "";
+        const trimmedEmail = typeof email === "string" ? email.trim() : "";
+
+        if (!trimmedName || !trimmedUsername || !trimmedEmail) {
+            return res.status(400).json({ message: "Nome, username e email inválidos." });
+        }
+
+        const existingUser = await User.findOne({
+            $or: [{ email: trimmedEmail }, { username: trimmedUsername }],
+        });
+        if (existingUser) {
+            return res.status(400).json({ message: "Email ou username já registado" });
+        }
+
+        const newUser = new User({
+            name: trimmedName,
+            username: trimmedUsername,
+            email: trimmedEmail,
+            password,
+            role: "client",
+            trainerId,
+        });
+
+        await newUser.save();
+
+        const userResponse = await User.findById(newUser._id).select("-password");
+        res.status(201).json({ message: "Cliente criado com sucesso!", user: userResponse });
+    } catch (error) {
+        res.status(500).json({ message: "Erro ao criar cliente", error });
+    }
+}
+
+export const createTrainer = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const adminId = req.user?.id;
+        if (!adminId) return res.status(401).json({ message: "Não autenticado" });
+
+        const { name, username, email, password } = req.body;
+        if (!name || !username || !email || !password) {
+            return res.status(400).json({ message: "Nome, username, email e password são obrigatórios." });
+        }
+
+        const trimmedName = typeof name === "string" ? name.trim() : "";
+        const trimmedUsername = typeof username === "string" ? username.trim() : "";
+        const trimmedEmail = typeof email === "string" ? email.trim() : "";
+
+        if (!trimmedName || !trimmedUsername || !trimmedEmail) {
+            return res.status(400).json({ message: "Nome, username e email inválidos." });
+        }
+
+        const existingUser = await User.findOne({
+            $or: [{ email: trimmedEmail }, { username: trimmedUsername }],
+        });
+        if (existingUser) {
+            return res.status(400).json({ message: "Email ou username já registado" });
+        }
+
+        const newUser = new User({
+            name: trimmedName,
+            username: trimmedUsername,
+            email: trimmedEmail,
+            password,
+            role: "trainer",
+        });
+
+        await newUser.save();
+
+        const userResponse = await User.findById(newUser._id).select("-password");
+        res.status(201).json({ message: "Personal trainer criado com sucesso!", user: userResponse });
+    } catch (error) {
+        res.status(500).json({ message: "Erro ao criar personal trainer", error });
+    }
+};
 
 export const searchUsers = async (req: Request, res: Response) => {
     try {
@@ -128,6 +215,42 @@ export const updateAvatar = async (req: AuthenticatedRequest, res: Response) => 
     }
 };
 
+export const updatePassword = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const userId = req.user?.id;
+        const { currentPassword, newPassword } = req.body;
+
+        if (!userId) return res.status(401).json({ message: "Não autenticado" });
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ message: "Password atual e nova password são obrigatórias." });
+        }
+
+        if (currentPassword === newPassword) {
+            return res.status(400).json({ message: "A nova password deve ser diferente da atual." });
+        }
+
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
+        if (!passwordRegex.test(newPassword)) {
+            return res.status(400).json({
+                message: "A senha deve ter pelo menos 6 caracteres, incluindo letras maiúsculas, minúsculas e números.",
+            });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ message: "Utilizador não encontrado" });
+
+        const isMatch = await user.comparePassword(currentPassword);
+        if (!isMatch) return res.status(400).json({ message: "Password atual incorreta." });
+
+        user.password = newPassword;
+        await user.save();
+
+        res.json({ message: "Password atualizada com sucesso!" });
+    } catch (error) {
+        res.status(500).json({ message: "Erro ao atualizar password", error });
+    }
+};
+
 export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const { role, applicationStatus } = req.query;
@@ -169,5 +292,40 @@ export const updateTrainerApplicationStatus = async (req: AuthenticatedRequest, 
         res.json(user);
     } catch (error) {
         res.status(500).json({ message: "Erro ao atualizar candidatura", error });
+    }
+};
+
+export const updateUserRole = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { role } = req.body;
+
+        if (!["client", "trainer", "admin"].includes(role)) {
+            return res.status(400).json({ message: "Role inválida." });
+        }
+
+        const updated = await User.findByIdAndUpdate(
+            id,
+            { role },
+            { new: true }
+        ).select("-password");
+
+        if (!updated) return res.status(404).json({ message: "Utilizador não encontrado" });
+        res.json(updated);
+    } catch (error) {
+        res.status(500).json({ message: "Erro ao atualizar role", error });
+    }
+};
+
+export const deleteUser = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        const deleted = await User.findByIdAndDelete(id).select("-password");
+        if (!deleted) return res.status(404).json({ message: "Utilizador não encontrado" });
+
+        res.json({ message: "Utilizador eliminado", user: deleted });
+    } catch (error) {
+        res.status(500).json({ message: "Erro ao eliminar utilizador", error });
     }
 };

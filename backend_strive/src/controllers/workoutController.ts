@@ -10,12 +10,38 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
+const MAX_EXERCISES_PER_DAY = 10;
+
+const validateExercisesPerDay = (days: any) => {
+  if (!Array.isArray(days)) return null;
+  for (const day of days) {
+    if (Array.isArray(day?.exercises) && day.exercises.length > MAX_EXERCISES_PER_DAY) {
+      return `Máximo de ${MAX_EXERCISES_PER_DAY} exercicios por dia.`;
+    }
+  }
+  return null;
+};
+
+const getValidationErrorMessage = (error: any) => {
+  if (!error || error.name !== "ValidationError") return null;
+  const first = Object.values(error.errors || {})[0] as any;
+  return first?.message || "Dados inválidos.";
+};
 
 export const createWorkoutPlan = async (req: Request, res: Response) => {
   try {
+    const limitError = validateExercisesPerDay(req.body?.days);
+    if (limitError) {
+      return res.status(400).json({ message: limitError });
+    }
+
     const plan = await WorkoutPlan.create(req.body);
     res.status(201).json(plan);
   } catch (error) {
+    const validationMessage = getValidationErrorMessage(error);
+    if (validationMessage) {
+      return res.status(400).json({ message: validationMessage });
+    }
     res.status(500).json({ message: "Erro ao criar plano de treino", error });
   }
 };
@@ -52,14 +78,23 @@ export const getWorkoutPlansByClient = async (req: Request, res: Response) => {
 
 export const updateWorkoutPlan = async (req: Request, res: Response) => {
   try {
+    const limitError = validateExercisesPerDay(req.body?.days);
+    if (limitError) {
+      return res.status(400).json({ message: limitError });
+    }
+
     const updated = await WorkoutPlan.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true }
+      { new: true, runValidators: true }
     );
     if (!updated) return res.status(404).json({ message: "Plano não encontrado" });
     res.json(updated);
   } catch (error) {
+    const validationMessage = getValidationErrorMessage(error);
+    if (validationMessage) {
+      return res.status(400).json({ message: validationMessage });
+    }
     res.status(500).json({ message: "Erro ao atualizar plano", error });
   }
 };

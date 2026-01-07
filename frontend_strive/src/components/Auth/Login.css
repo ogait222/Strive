@@ -129,6 +129,28 @@
   color: #bbb;
 }
 
+.auth-links {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -6px;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+  color: var(--primary-hover);
+}
+
 .error-message {
   background: #ffebee;
   color: #c62828;
@@ -137,6 +159,15 @@
   font-size: 14px;
   border-left: 4px solid #c62828;
   animation: shake 0.3s ease;
+}
+
+.success-message {
+  background: #e8f6ef;
+  color: #1b9a5f;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  border-left: 4px solid #1b9a5f;
 }
 
 @keyframes shake {
@@ -209,6 +240,55 @@
 .btn-switch:hover {
   text-decoration: underline;
   color: var(--primary-hover);
+}
+
+.qr-login {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 1.5rem 0 1rem;
+}
+
+.btn-qr {
+  background: transparent;
+  border: 1px solid var(--card-border);
+  color: var(--text-color);
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-qr:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.btn-qr:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.qr-panel {
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.qr-reader {
+  width: 100%;
+  min-height: 260px;
+}
+
+.qr-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--secondary-text);
 }
 
 @media (max-width: 480px) {

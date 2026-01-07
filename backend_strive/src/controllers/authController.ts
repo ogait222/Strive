@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import * as crypto from "crypto";
 import User, { UserDocument } from "../models/Users";
 import dotenv from "dotenv";
+import { sendResetPasswordEmail } from "../utils/email";
 
 dotenv.config();
 
@@ -120,7 +121,8 @@ export const login = async (req: Request, res: Response) => {
 export const forgotPassword = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
-    const user: UserDocument | null = await User.findOne({ email });
+    const trimmedEmail = typeof email === "string" ? email.trim() : "";
+    const user: UserDocument | null = await User.findOne({ email: trimmedEmail });
 
     if (!user)
       return res.status(404).json({ message: "Utilizador não encontrado" });
@@ -133,12 +135,21 @@ export const forgotPassword = async (req: Request, res: Response) => {
     user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000);
     await user.save();
 
-    res.json({
-      message: "Token de reset gerado com sucesso.",
-      resetToken,
-    });
+    const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/$/, "");
+    const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
+
+    try {
+      await sendResetPasswordEmail(user.email, resetUrl);
+    } catch (emailError) {
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpires = undefined;
+      await user.save();
+      return res.status(500).json({ message: "Erro ao enviar email de recuperação." });
+    }
+
+    res.json({ message: "Email de recuperação enviado com sucesso." });
   } catch (error) {
-    res.status(500).json({ message: "Erro ao gerar token de reset", error });
+    res.status(500).json({ message: "Erro ao processar recuperação de password", error });
   }
 };
 
@@ -166,5 +177,68 @@ export const resetPassword = async (req: Request, res: Response) => {
     res.json({ message: "Password atualizada com sucesso!" });
   } catch (error) {
     res.status(500).json({ message: "Erro ao resetar password", error });
+  }
+};
+
+export const generateQrLogin = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) return res.status(401).json({ message: "Não autenticado" });
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { qrLoginToken: hashedToken, qrLoginExpires: expiresAt },
+      { new: true }
+    );
+
+    if (!user) return res.status(404).json({ message: "Utilizador não encontrado" });
+
+    res.json({ token, expiresAt });
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao gerar QR login", error });
+  }
+};
+
+export const loginWithQr = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.body;
+    if (!token || typeof token !== "string") {
+      return res.status(400).json({ message: "Token inválido" });
+    }
+
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    const user = await User.findOne({
+      qrLoginToken: hashedToken,
+      qrLoginExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "QR inválido ou expirado" });
+    }
+
+    const jwtToken = jwt.sign(
+      { id: user._id, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      token: jwtToken,
+      user: {
+        _id: user._id,
+        id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        avatarUrl: user.avatarUrl,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao fazer login com QR", error });
   }
 };

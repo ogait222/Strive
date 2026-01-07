@@ -1,6 +1,13 @@
 import express from "express";
-import { register, login, forgotPassword, resetPassword } from "../controllers/authController";
-import { authorizeRoles, verifyToken } from "../middlewares/authMiddleware";
+import {
+  register,
+  login,
+  forgotPassword,
+  resetPassword,
+  generateQrLogin,
+  loginWithQr,
+} from "../controllers/authController";
+import { verifyToken } from "../middlewares/authMiddleware";
 
 const router = express.Router();
 
@@ -139,10 +146,8 @@ router.post("/forgot-password", forgotPassword);
  * @swagger
  * /auth/reset-password/{token}:
  *   post:
- *     summary: Redefinir password
+ *     summary: Redefinir password com token de recuperação
  *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: token
@@ -162,6 +167,8 @@ router.post("/forgot-password", forgotPassword);
  *       400:
  *         description: Token inválido ou expirado
  */
-router.post("/reset-password/:token", verifyToken, resetPassword);
+router.post("/reset-password/:token", resetPassword);
+router.post("/qr", verifyToken, generateQrLogin);
+router.post("/qr/login", loginWithQr);
 
 export default router;
