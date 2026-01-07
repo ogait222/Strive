@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../NavBar/NavBar";
 import defaultAvatar from "../../assets/default-avatar.png";
+import { API_BASE_URL } from "../../config";
 import "./MyStudents.css";
 
 interface User {
@@ -102,7 +103,7 @@ export default function MyStudents() {
                 return;
             }
 
-            const response = await axios.get("http://localhost:3500/users/students", {
+            const response = await axios.get(`${API_BASE_URL}/users/students`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -157,7 +158,7 @@ export default function MyStudents() {
             };
 
             const response = await axios.post(
-                "http://localhost:3500/users/students",
+                `${API_BASE_URL}/users/students`,
                 payload,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -256,7 +257,7 @@ export default function MyStudents() {
                 return;
             }
             const response = await axios.get(
-                `http://localhost:3500/workouts/client/${student._id}`,
+                `${API_BASE_URL}/workouts/client/${student._id}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setStudentPlans(response.data);
@@ -276,7 +277,7 @@ export default function MyStudents() {
                 setTemplatesError("Não autenticado");
                 return;
             }
-            const response = await axios.get("http://localhost:3500/workout-templates", {
+            const response = await axios.get(`${API_BASE_URL}/workout-templates`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setTemplates(response.data);
@@ -327,7 +328,7 @@ export default function MyStudents() {
                 alert("Não autenticado");
                 return;
             }
-            await axios.delete(`http://localhost:3500/workout-templates/${selectedTemplateId}`, {
+            await axios.delete(`${API_BASE_URL}/workout-templates/${selectedTemplateId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setTemplates((prev) => prev.filter((item) => item._id !== selectedTemplateId));
@@ -364,7 +365,7 @@ export default function MyStudents() {
                 days: daysPayload
             };
 
-            await axios.post("http://localhost:3500/workouts", payload, {
+            await axios.post(`${API_BASE_URL}/workouts`, payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -385,7 +386,7 @@ export default function MyStudents() {
                 };
 
                 try {
-                    await axios.post("http://localhost:3500/workout-templates", templatePayload, {
+                    await axios.post(`${API_BASE_URL}/workout-templates`, templatePayload, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                 } catch (templateError: any) {

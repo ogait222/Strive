@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../NavBar/NavBar";
+import { API_BASE_URL } from "../../config";
 import "./ChangeTrainerRequest.css";
 import { useNavigate } from "react-router-dom";
 
@@ -45,8 +46,8 @@ export default function ChangeTrainerRequest() {
 
                 // Fetch current user and all trainers in parallel
                 const [userRes, trainersRes] = await Promise.all([
-                    axios.get("http://localhost:3500/users/me", config),
-                    axios.get("http://localhost:3500/users/trainers", config)
+                    axios.get(`${API_BASE_URL}/users/me`, config),
+                    axios.get(`${API_BASE_URL}/users/trainers`, config)
                 ]);
 
                 setCurrentUser(userRes.data);
@@ -82,7 +83,7 @@ export default function ChangeTrainerRequest() {
             }
 
             await axios.post(
-                "http://localhost:3500/change-trainer/request",
+                `${API_BASE_URL}/change-trainer/request`,
                 {
                     client: currentUser._id,
                     currentTrainer: currentTrainerId,

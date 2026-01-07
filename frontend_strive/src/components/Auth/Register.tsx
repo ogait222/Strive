@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE_URL } from "../../config";
 import "./Register.css";
 
 interface RegisterProps {
@@ -113,7 +114,7 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
         payload.idDocumentFile = await toBase64(trainerIdDocument as File);
       }
 
-      await axios.post("http://localhost:3500/auth/register", payload);
+      await axios.post(`${API_BASE_URL}/auth/register`, payload);
 
       setSuccess("Conta criada com sucesso! Redirecionando para login...");
       setFormData({
@@ -287,7 +288,7 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
         <div className="auth-footer">
           <p>
             Já tens conta?{" "}
-            <button 
+            <button
               type="button"
               onClick={onSwitchToLogin}
               className="btn-switch"

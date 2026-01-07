@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import QRCode from "qrcode";
 import NavBar from "../NavBar/NavBar";
+import { API_BASE_URL } from "../../config";
 import "./Profile.css";
 
 interface UserData {
@@ -58,7 +59,7 @@ export default function Profile() {
       try {
         const token = localStorage.getItem("token");
         await axios.put(
-          "http://localhost:3500/users/me/avatar",
+          `${API_BASE_URL}/users/me/avatar`,
           { avatarUrl: base64 },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -105,7 +106,7 @@ export default function Profile() {
         return;
       }
       await axios.put(
-        "http://localhost:3500/users/me/password",
+        `${API_BASE_URL}/users/me/password`,
         { currentPassword, newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -131,7 +132,7 @@ export default function Profile() {
       }
 
       const response = await axios.post(
-        "http://localhost:3500/auth/qr",
+        `${API_BASE_URL}/auth/qr`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -261,7 +262,7 @@ export default function Profile() {
               </div>
               {qrError && <div className="error-message">{qrError}</div>}
             </div>
-      
+
             <div className="password-card">
               <div>
                 <h3>Alterar password</h3>

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
 import NavBar from "../NavBar/NavBar";
+import { API_BASE_URL } from "../../config";
 import "./Workouts.css";
 
 interface Exercise {
@@ -17,7 +18,7 @@ interface WorkoutDay {
   day: string;
   status?: 'pending' | 'completed' | 'failed';
   exercises: Exercise[];
-  completionPhotoProof?: string; 
+  completionPhotoProof?: string;
   failureReason?: string;
   calendarDate?: string;
 }
@@ -76,7 +77,7 @@ export default function Workouts() {
       }
 
       const response = await axios.get(
-        `http://localhost:3500/workouts/client/${user.id}`,
+        `${API_BASE_URL}/workouts/client/${user.id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -121,7 +122,7 @@ export default function Workouts() {
       }
 
       await axios.patch(
-        `http://localhost:3500/workouts/${planId}/day/${dayId}/status`,
+        `${API_BASE_URL}/workouts/${planId}/day/${dayId}/status`,
         payload,
         {
           headers: {
@@ -215,7 +216,7 @@ export default function Workouts() {
     try {
       const token = localStorage.getItem("token");
       await axios.patch(
-        `http://localhost:3500/workouts/${planId}/archive`,
+        `${API_BASE_URL}/workouts/${planId}/archive`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -345,8 +346,8 @@ export default function Workouts() {
             {activeTab === 'active'
               ? "Não há planos de treino ativos."
               : activeTab === 'archived'
-              ? "Não há planos arquivados."
-              : "Não há histórico de planos."}
+                ? "Não há planos arquivados."
+                : "Não há histórico de planos."}
           </p>
         ) : (
           paginatedPlans.map((plan) => {

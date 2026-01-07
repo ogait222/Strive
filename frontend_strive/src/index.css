@@ -189,6 +189,7 @@ button:focus-visible {
   color: var(--toast-message);
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   max-width: 240px;

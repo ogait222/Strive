@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE_URL } from "../../config";
 import "./Login.css";
 
 interface LoginProps {
@@ -32,7 +33,7 @@ export default function Login({ onSwitchToRegister }: LoginProps) {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:3500/auth/login", {
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, {
         username,
         password,
       });
@@ -78,7 +79,7 @@ export default function Login({ onSwitchToRegister }: LoginProps) {
         ? decodedText.slice(prefix.length)
         : decodedText;
 
-      const response = await axios.post("http://localhost:3500/auth/qr/login", { token });
+      const response = await axios.post(`${API_BASE_URL}/auth/qr/login`, { token });
       const { token: jwtToken, user } = response.data;
       localStorage.setItem("token", jwtToken);
       localStorage.setItem("user", JSON.stringify(user));
@@ -112,6 +113,9 @@ export default function Login({ onSwitchToRegister }: LoginProps) {
         { fps: 10, qrbox: { width: 240, height: 240 } },
         (decodedText) => {
           void handleQrDecoded(decodedText);
+        },
+        (_) => {
+          // parse error, ignore it.
         }
       );
     } catch (err: any) {
@@ -119,8 +123,8 @@ export default function Login({ onSwitchToRegister }: LoginProps) {
         err?.name === "NotAllowedError"
           ? "Permissão da câmara negada."
           : err?.name === "NotFoundError"
-          ? "Câmara não encontrada."
-          : "Não foi possível iniciar a câmara.";
+            ? "Câmara não encontrada."
+            : "Não foi possível iniciar a câmara.";
       setQrError(message);
       await stopQrScanner();
     } finally {

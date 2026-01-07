@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../NavBar/NavBar";
+import { API_BASE_URL } from "../../config";
 import "./TrainerSelection.css";
 import { useNavigate } from "react-router-dom";
 
@@ -17,7 +18,7 @@ export default function TrainerSelection() {
     const [query, setQuery] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [reason, setReason] = useState("");
+    const reason = "";
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -29,7 +30,7 @@ export default function TrainerSelection() {
                     return;
                 }
 
-                const response = await axios.get("http://localhost:3500/users/trainers", {
+                const response = await axios.get(`${API_BASE_URL}/users/trainers`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
@@ -49,7 +50,7 @@ export default function TrainerSelection() {
         try {
             const token = localStorage.getItem("token");
             await axios.put(
-                "http://localhost:3500/users/select-trainer",
+                `${API_BASE_URL}/users/select-trainer`,
                 { trainerId, reason },
                 { headers: { Authorization: `Bearer ${token}` } }
             );

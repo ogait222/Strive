@@ -5,6 +5,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import NavBar from "../NavBar/NavBar";
+import { API_BASE_URL } from "../../config";
 import "./Dashboard.css";
 
 interface Trainer {
@@ -23,6 +24,7 @@ interface UserProfile {
   trainerId?: Trainer | null;
   _id?: string;
   id?: string;
+  avatarUrl?: string;
 }
 
 interface WorkoutDay {
@@ -79,9 +81,9 @@ const RatioChart = ({ done, total, percent, color, label }: RatioChartProps) => 
   const hasData = total > 0;
   const data = hasData
     ? [
-        { name: "Concluidos", value: done },
-        { name: "Restantes", value: remaining },
-      ]
+      { name: "Concluidos", value: done },
+      { name: "Restantes", value: remaining },
+    ]
     : [{ name: "Sem dados", value: 1 }];
   const colors = hasData ? [color, "var(--card-border)"] : ["var(--card-border)"];
 
@@ -113,11 +115,11 @@ const RatioChart = ({ done, total, percent, color, label }: RatioChartProps) => 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [unreadCount, setUnreadCount] = useState(0);
+
   const [loading, setLoading] = useState(true);
   const lastToastAtRef = useRef(0);
 
-  const [unreadChatCount, setUnreadChatCount] = useState(0);
+
   const [workoutStats, setWorkoutStats] = useState({
     week: { done: 0, failed: 0, total: 0, percent: 0 },
     month: { done: 0, failed: 0, total: 0, percent: 0 },
@@ -162,7 +164,7 @@ export default function Dashboard() {
       if (value instanceof Date) {
         return Number.isNaN(value.getTime()) ? null : value;
       }
-      const raw = value.split("T")[0];
+      const raw = (value as string).split("T")[0];
       const parts = raw.split("-");
       if (parts.length === 3) {
         const year = Number(parts[0]);
@@ -223,7 +225,7 @@ export default function Dashboard() {
     plans.forEach((plan) => {
       plan.days?.forEach((d) => {
         if (!d.calendarDate) return;
-        const key = d.calendarDate.split("T")[0];
+        const key = d.calendarDate instanceof Date ? d.calendarDate.toISOString().split("T")[0] : d.calendarDate.split("T")[0];
         if (!map[key]) map[key] = [];
         map[key].push(d);
       });
@@ -311,12 +313,10 @@ export default function Dashboard() {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
-        const response = await axios.get("http://localhost:3500/notifications", {
+        const response = await axios.get(`${API_BASE_URL}/notifications`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const notifications = response.data || [];
-        const notifCount = notifications.filter((n: Notification) => !n.read).length;
-        setUnreadCount(notifCount);
         maybeShowTrainerToast(notifications, role);
       } catch (error) {
         console.error("Erro ao atualizar notificações:", error);
@@ -329,11 +329,10 @@ export default function Dashboard() {
         const userStr = localStorage.getItem("user");
         if (!token) return;
 
-        let userId = "";
         try {
           if (userStr) {
-            const u = JSON.parse(userStr);
-            userId = u.id || u._id;
+            // validating user string exists
+            JSON.parse(userStr);
           }
         } catch (e) {
           console.error("Error parsing user from localstorage", e);
@@ -341,28 +340,20 @@ export default function Dashboard() {
 
         const config = { headers: { Authorization: `Bearer ${token}` } };
 
-        const profileRes = await axios.get("http://localhost:3500/users/me", config);
+        const profileRes = await axios.get(`${API_BASE_URL}/users/me`, config);
         const currentUser = profileRes.data;
         setUser(currentUser);
         const currentUserId = currentUser._id || currentUser.id;
 
-        const [notificationsRes, chatsRes] = await Promise.all([
-          axios.get("http://localhost:3500/notifications", config),
-          axios.get(`http://localhost:3500/chats/user/${currentUserId}`, config),
-        ]);
 
-        const notifications = notificationsRes.data || [];
-        const notifCount = notifications.filter((n: Notification) => !n.read).length;
-        setUnreadCount(notifCount);
-        maybeShowTrainerToast(notifications, currentUser.role);
 
-        const chats = chatsRes.data;
-        const chatCount = chats.reduce((acc: number, chat: any) => acc + (chat.unreadCount || 0), 0);
-        setUnreadChatCount(chatCount);
+
+
+
 
         if (currentUser.role === "client") {
           const workoutsRes = await axios.get(
-            `http://localhost:3500/workouts/client/${currentUserId}`,
+            `${API_BASE_URL}/workouts/client/${currentUserId}`,
             config
           );
           setWorkoutPlans(workoutsRes.data);
@@ -372,7 +363,7 @@ export default function Dashboard() {
         if (currentUser.role === "trainer") {
           try {
             setStudentsLoading(true);
-            const studentsRes = await axios.get("http://localhost:3500/users/students", config);
+            const studentsRes = await axios.get(`${API_BASE_URL}/users/students`, config);
             setStudents(studentsRes.data);
           } catch (err: any) {
             setStudentsError(err.response?.data?.message || "Erro ao carregar alunos.");
@@ -407,7 +398,7 @@ export default function Dashboard() {
     workoutPlans.forEach((plan) => {
       plan.days?.forEach((day) => {
         if (!day.calendarDate) return;
-        const key = day.calendarDate.split("T")[0];
+        const key = day.calendarDate instanceof Date ? day.calendarDate.toISOString().split("T")[0] : day.calendarDate.split("T")[0];
         if (key === todayKey) {
           workouts.push({ workoutDay: day, planTitle: plan.title });
         }
@@ -438,7 +429,7 @@ export default function Dashboard() {
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const res = await axios.get(
-        `http://localhost:3500/workouts/client/${student._id || student.id}`,
+        `${API_BASE_URL}/workouts/client/${student._id || student.id}`,
         config
       );
       setSelectedPlans(res.data);
@@ -491,7 +482,7 @@ export default function Dashboard() {
             )}
           </div>
         )}
-        
+
         {user?.role === "client" && (
           <>
             <div className="workout-stats">
@@ -687,7 +678,7 @@ export default function Dashboard() {
                   <div>
                     <p className="eyebrow">Cliente</p>
                     <h2>
-                      {selectedStudent.name} 
+                      {selectedStudent.name}
                     </h2>
                     <h3>
                       @{selectedStudent.username}
@@ -799,7 +790,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        
+
       </div>
     </div>
   );

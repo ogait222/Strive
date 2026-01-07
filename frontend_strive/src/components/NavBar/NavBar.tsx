@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef} from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../NavBar/NavBar.css";
 import { useTheme } from "../../context/ThemeContext";
+import { API_BASE_URL } from "../../config";
 import { useChatNotifications } from "../../context/ChatNotificationsContext";
 
 export default function NavBar() {
@@ -17,22 +18,22 @@ export default function NavBar() {
   const navItems: { label: string; path: string }[] = user
     ? user.role === "client"
       ? [
-          { label: "Treinos", path: "/workouts" },
-          { label: "Notificações", path: "/notifications" },
-          { label: "Chat", path: "/chat" },
-        ]
+        { label: "Treinos", path: "/workouts" },
+        { label: "Notificações", path: "/notifications" },
+        { label: "Chat", path: "/chat" },
+      ]
       : user.role === "trainer"
-      ? [
+        ? [
           { label: "Meus Clientes", path: "/my-students" },
           { label: "Notificações", path: "/notifications" },
           { label: "Chat", path: "/chat" },
         ]
-      : user.role === "admin"
-      ? [
-          { label: "Dashboard", path: "/admin-dashboard" },
-          { label: "Chat", path: "/chat" },
-        ]
-      : []
+        : user.role === "admin"
+          ? [
+            { label: "Dashboard", path: "/admin-dashboard" },
+            { label: "Chat", path: "/chat" },
+          ]
+          : []
     : [];
 
   useEffect(() => {
@@ -77,7 +78,7 @@ export default function NavBar() {
         if (!user) return;
         const token = localStorage.getItem("token");
         if (!token) return;
-        const response = await axios.get("http://localhost:3500/notifications", {
+        const response = await axios.get(`${API_BASE_URL}/notifications`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const unread = response.data.filter((item: any) => !item.read).length;

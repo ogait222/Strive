@@ -11,6 +11,7 @@ import axios from "axios";
 import { io, Socket } from "socket.io-client";
 import { toast } from "react-toastify";
 import { useLocation } from "react-router-dom";
+import { API_BASE_URL } from "../config";
 
 interface IUser {
   _id: string;
@@ -118,7 +119,9 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
       return;
     }
 
-    const newSocket = io("http://localhost:3500");
+
+    // Use API_BASE_URL for socket connection
+    const newSocket = io(API_BASE_URL);
     setSocket(newSocket);
 
     return () => {
@@ -134,7 +137,7 @@ export function ChatNotificationsProvider({ children }: { children: React.ReactN
     if (!token) return;
 
     try {
-      const response = await axios.get(`http://localhost:3500/chats/user/${userId}`, {
+      const response = await axios.get(`${API_BASE_URL}/chats/user/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const chats = response.data || [];

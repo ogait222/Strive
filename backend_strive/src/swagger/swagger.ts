@@ -11,6 +11,10 @@ const options = {
     },
     servers: [
       {
+        url: "https://strive-po0s.onrender.com",
+        description: "Servidor de Produção (Render)",
+      },
+      {
         url: "http://localhost:3500",
         description: "Servidor local",
       },

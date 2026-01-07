@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../NavBar/NavBar";
+import { API_BASE_URL } from "../../config";
 import "./Notifications.css";
 import { useNavigate } from "react-router-dom";
 
@@ -27,7 +28,7 @@ export default function Notifications() {
                     return;
                 }
 
-                const response = await axios.get("http://localhost:3500/notifications", {
+                const response = await axios.get(`${API_BASE_URL}/notifications`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
@@ -36,7 +37,7 @@ export default function Notifications() {
                 // Mark all as read if there are unread ones
                 const hasUnread = response.data.some((n: any) => !n.read);
                 if (hasUnread) {
-                    await axios.post("http://localhost:3500/notifications/read-all", {}, {
+                    await axios.post(`${API_BASE_URL}/notifications/read-all`, {}, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     // Optimistically update local state
@@ -57,7 +58,7 @@ export default function Notifications() {
         try {
             const token = localStorage.getItem("token");
             await axios.put(
-                `http://localhost:3500/notifications/${id}/read`,
+                `${API_BASE_URL}/notifications/${id}/read`,
                 {},
                 { headers: { Authorization: `Bearer ${token}` } }
             );

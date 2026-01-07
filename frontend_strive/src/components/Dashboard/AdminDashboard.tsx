@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import type { FormEvent } from 'react';
 import axios from 'axios';
 import NavBar from '../NavBar/NavBar';
+import { API_BASE_URL } from "../../config";
 import { useSearchParams } from 'react-router-dom';
 import {
     ResponsiveContainer,
@@ -72,8 +73,8 @@ export default function AdminDashboard() {
     const [requests, setRequests] = useState<TrainerChangeRequest[]>([]);
     const [requestsLoading, setRequestsLoading] = useState(true);
     const [requestsError, setRequestsError] = useState('');
-    const [totalUnread, setTotalUnread] = useState(0);
     const [users, setUsers] = useState<AdminUser[]>([]);
+
     const [usersLoading, setUsersLoading] = useState(true);
     const [usersError, setUsersError] = useState('');
     const [applications, setApplications] = useState<AdminUser[]>([]);
@@ -115,13 +116,9 @@ export default function AdminDashboard() {
             const user = JSON.parse(userStr);
             const userId = user.id || user._id;
 
-            const response = await axios.get(`http://localhost:3500/chats/user/${userId}`, {
+            await axios.get(`${API_BASE_URL}/chats/user/${userId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            const chats = response.data;
-            // Calculate total unread (assuming chat object now has unreadCount property from updated backend)
-            const total = chats.reduce((acc: number, chat: any) => acc + (chat.unreadCount || 0), 0);
-            setTotalUnread(total);
         } catch (error) {
             console.error('Erro ao buscar mensagens não lidas:', error);
         }
@@ -131,7 +128,7 @@ export default function AdminDashboard() {
         try {
             // Assuming the user token is stored in localStorage
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:3500/change-trainer/request?status=pending', {
+            const response = await axios.get(`${API_BASE_URL}/change-trainer/request?status=pending`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setRequests(response.data);
@@ -146,7 +143,7 @@ export default function AdminDashboard() {
     const handleStatusUpdate = async (id: string, status: 'approved' | 'rejected') => {
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`http://localhost:3500/change-trainer/request/${id}`,
+            await axios.put(`${API_BASE_URL}/change-trainer/request/${id}`,
                 { status },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -164,7 +161,7 @@ export default function AdminDashboard() {
     const fetchUsers = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:3500/users', {
+            const response = await axios.get(`${API_BASE_URL}/users`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUsers(response.data);
@@ -179,7 +176,7 @@ export default function AdminDashboard() {
     const fetchTrainerApplications = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:3500/users?applicationStatus=pending', {
+            const response = await axios.get(`${API_BASE_URL}/users?applicationStatus=pending`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setApplications(response.data);
@@ -195,7 +192,7 @@ export default function AdminDashboard() {
         try {
             const token = localStorage.getItem('token');
             const response = await axios.put(
-                `http://localhost:3500/users/${userId}/trainer-application`,
+                `${API_BASE_URL}/users/${userId}/trainer-application`,
                 { status },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -267,7 +264,7 @@ export default function AdminDashboard() {
             setRoleSaving((prev) => ({ ...prev, [user._id]: true }));
             const token = localStorage.getItem('token');
             const response = await axios.put(
-                `http://localhost:3500/users/${user._id}/role`,
+                `${API_BASE_URL}/users/${user._id}/role`,
                 { role: nextRole },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -290,7 +287,7 @@ export default function AdminDashboard() {
         try {
             setDeleteLoading((prev) => ({ ...prev, [user._id]: true }));
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:3500/users/${user._id}`, {
+            await axios.delete(`${API_BASE_URL}/users/${user._id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUsers((prev) => prev.filter((item) => item._id !== user._id));
@@ -341,7 +338,7 @@ export default function AdminDashboard() {
                 setTrainerCreateError("Não autenticado.");
                 return;
             }
-            const response = await axios.post("http://localhost:3500/users/trainers", payload, {
+            const response = await axios.post(`${API_BASE_URL}/users/trainers`, payload, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const created = response.data?.user;

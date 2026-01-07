@@ -4,6 +4,7 @@ import { io, Socket } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import NavBar from "../NavBar/NavBar";
 import { useChatNotifications } from "../../context/ChatNotificationsContext";
+import { API_BASE_URL } from "../../config";
 import "./Chat.css";
 
 interface IUser {
@@ -65,7 +66,7 @@ const Chat: React.FC = () => {
         setCurrentUser(user);
 
         // Socket Connection
-        const newSocket = io("http://localhost:3500");
+        const newSocket = io(API_BASE_URL);
         setSocket(newSocket);
 
         return () => {
@@ -154,7 +155,7 @@ const Chat: React.FC = () => {
         try {
             const token = localStorage.getItem("token");
             const response = await axios.get(
-                `http://localhost:3500/chats/user/${currentUser!._id}`,
+                `${API_BASE_URL}/chats/user/${currentUser!._id}`,
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 }
@@ -169,7 +170,7 @@ const Chat: React.FC = () => {
         try {
             const token = localStorage.getItem("token");
             await axios.put(
-                `http://localhost:3500/chats/${chatId}/read`,
+                `${API_BASE_URL}/chats/${chatId}/read`,
                 {},
                 {
                     headers: { Authorization: `Bearer ${token}` },
@@ -188,7 +189,7 @@ const Chat: React.FC = () => {
         try {
             const token = localStorage.getItem("token");
             await axios.put(
-                `http://localhost:3500/chats/${chatId}/archive`,
+                `${API_BASE_URL}/chats/${chatId}/archive`,
                 {},
                 {
                     headers: { Authorization: `Bearer ${token}` },
@@ -219,7 +220,7 @@ const Chat: React.FC = () => {
         try {
             const token = localStorage.getItem("token");
             await axios.put(
-                `http://localhost:3500/chats/${chatId}/unarchive`,
+                `${API_BASE_URL}/chats/${chatId}/unarchive`,
                 {},
                 {
                     headers: { Authorization: `Bearer ${token}` },
@@ -249,7 +250,7 @@ const Chat: React.FC = () => {
         try {
             const token = localStorage.getItem("token");
             const response = await axios.get(
-                `http://localhost:3500/users/search?query=${query}`,
+                `${API_BASE_URL}/users/search?query=${query}`,
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 }
@@ -264,7 +265,7 @@ const Chat: React.FC = () => {
         try {
             const token = localStorage.getItem("token");
             await axios.post(
-                "http://localhost:3500/chats/create",
+                `${API_BASE_URL}/chats/create`,
                 {
                     userId1: currentUser!._id,
                     userId2: targetUser._id,
@@ -295,7 +296,7 @@ const Chat: React.FC = () => {
         try {
             const token = localStorage.getItem("token");
             const response = await axios.get(
-                `http://localhost:3500/chats/${chat._id}/messages`,
+                `${API_BASE_URL}/chats/${chat._id}/messages`,
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 }
@@ -319,7 +320,7 @@ const Chat: React.FC = () => {
             );
 
             const response = await axios.post(
-                "http://localhost:3500/chats/message",
+                `${API_BASE_URL}/chats/message`,
                 {
                     chatId: activeChat._id,
                     sender: currentUser!._id,
